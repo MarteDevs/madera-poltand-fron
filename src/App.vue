@@ -1,16 +1,17 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+// Aquí importaremos layouts si es necesario más adelante
 </script>
 
 <template>
-  <router-view></router-view>
+  <!-- Usamos Transition global para animar todas las rutas -->
+  <router-view v-slot="{ Component }">
+    <transition name="fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
 </template>
 
 <style>
-/* Estilos globales básicos (Opcional: usar Tailwind/Bootstrap después) */
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background-color: #f4f7f6;
-}
+/* Los estilos globales están ahora centralizados y 
+   manejados en src/style.css con variables modernas */
 </style>
