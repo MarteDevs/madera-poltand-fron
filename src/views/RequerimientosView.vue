@@ -1,268 +1,255 @@
 <template>
-  <MainLayout pageTitle="Gestión de Requerimientos">
-    <div class="page-container">
-      
-      <!-- Toolbox / Actions -->
-      <div class="toolbox glass-panel">
-        <div class="search-box">
-          <span class="icon">🔍</span>
-          <input type="text" class="search-input" placeholder="Buscar por código, artículo o mina..." />
-        </div>
+  <div class="contenedor">
+    <header class="cabecera-pantalla">
+      <h2>📝 Registrar Nuevo Requerimiento</h2>
+      <button class="btn-salir" @click="salir">Cerrar Sesión</button>
+    </header>
+
+    <div v-if="catalogos.cargando" class="cargando">Cargando listas...</div>
+
+    <div v-else class="grid-formulario">
+      <!-- PANEL IZQUIERDO: CABECERA DEL PEDIDO -->
+      <div class="panel">
+        <h3>1. Datos Generales</h3>
         
-        <div class="action-buttons">
-          <button class="premium-btn secondary-btn">
-            <span class="icon">📊</span> Exportar
-          </button>
-          <button class="premium-btn new-btn">
-            <span class="icon">➕</span> Nuevo Requerimiento
-          </button>
+        <div class="grupo">
+          <label>Fecha:</label>
+          <input type="date" v-model="formCabecera.fecha" required>
+        </div>
+
+        <div class="grupo">
+          <label>Mina (Cliente):</label>
+          <select v-model="formCabecera.mina_id" required>
+            <option value="" disabled>Seleccione una mina</option>
+            <option v-for="m in catalogos.minas" :key="m.id" :value="m.id">
+              {{ m.nombre }} - {{ m.razon_social }}
+            </option>
+          </select>
+        </div>
+
+        <div class="grupo">
+          <label>Supervisor:</label>
+          <select v-model="formCabecera.supervisor_id" required>
+            <option value="" disabled>Seleccione un supervisor</option>
+            <option v-for="s in catalogos.supervisores" :key="s.id" :value="s.id">
+              {{ s.nombre }}
+            </option>
+          </select>
         </div>
       </div>
 
-      <!-- Data Table -->
-      <div class="table-container glass-panel">
-        <table class="premium-table">
-          <thead>
-            <tr>
-              <th>CÓDIGO</th>
-              <th>FECHA</th>
-              <th>ARTÍCULO</th>
-              <th>PROVEEDOR</th>
-              <th>MINA</th>
-              <th class="text-right">CANTIDAD</th>
-              <th>ESTADO</th>
-              <th class="text-center">FALTANTE</th>
-              <th>ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Dummy Data for presentation, will be replaced by API call -->
-            <tr v-for="item in requerimientos" :key="item.id">
-              <td class="font-mono">{{ item.codigo }}</td>
-              <td>{{ item.fecha }}</td>
-              <td class="font-bold">{{ item.articulo }}</td>
-              <td>{{ item.proveedor }}</td>
-              <td>{{ item.mina }}</td>
-              <td class="text-right">{{ item.cantidad }}</td>
-              <td>
-                <span class="status-pill" :class="item.estado.toLowerCase()">
-                  {{ item.estado }}
-                </span>
-              </td>
-              <td class="text-center">
-                <span class="faltante-badge" v-if="item.faltante > 0">{{ item.faltante }}</span>
-                <span class="faltante-ok" v-else>0</span>
-              </td>
-              <td>
-                <div class="row-actions">
-                  <button class="action-btn edit" title="Editar">✏️</button>
-                  <button class="action-btn delete" title="Eliminar">🗑️</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- PANEL DERECHO: AGREGAR ARTÍCULOS -->
+      <div class="panel">
+        <h3>2. Agregar Artículo</h3>
+        
+        <div class="grupo">
+          <label>Artículo:</label>
+          <select v-model="articuloTemp.articulo_id" @change="autocompletarPrecios">
+            <option value="" disabled>Seleccione artículo</option>
+            <option v-for="a in catalogos.articulos" :key="a.id" :value="a.id">
+              {{ a.codigo }} - {{ a.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="grupo">
+          <label>Proveedor:</label>
+          <select v-model="articuloTemp.proveedor_id">
+            <option value="" disabled>Seleccione proveedor</option>
+            <option v-for="p in catalogos.proveedores" :key="p.id" :value="p.id">
+              {{ p.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="grid-2-col">
+          <div class="grupo">
+            <label>Cantidad:</label>
+            <input type="number" v-model="articuloTemp.cantidad" min="1">
+          </div>
+          <div class="grupo">
+            <label>P. Proveedor:</label>
+            <input type="number" step="0.01" v-model="articuloTemp.precio_proveedor" readonly style="background: #eee;">
+          </div>
+          <div class="grupo">
+            <label>P. Mina:</label>
+            <input type="number" step="0.01" v-model="articuloTemp.precio_mina" readonly style="background: #eee;">
+          </div>
+        </div>
+
+        <button class="btn-agregar" @click="agregarAlCarrito">➕ Agregar a la lista</button>
       </div>
-      
     </div>
-  </MainLayout>
+
+    <!-- TABLA DE ELEMENTOS TEMPORALES (Tu antiguo ListBox) -->
+    <div class="panel-tabla">
+      <h3>Lista de Artículos a Pedir</h3>
+      <table class="tabla-moderna">
+        <thead>
+          <tr>
+            <th>Artículo</th>
+            <th>Proveedor</th>
+            <th>Cantidad</th>
+            <th>P. Prov</th>
+            <th>P. Mina</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="carrito.length === 0">
+            <td colspan="6" style="text-align: center; color: #7f8c8d;">No hay artículos agregados aún.</td>
+          </tr>
+          <tr v-for="(item, index) in carrito" :key="index">
+            <td>{{ obtenerNombreArticulo(item.articulo_id) }}</td>
+            <td>{{ obtenerNombreProveedor(item.proveedor_id) }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>S/ {{ item.precio_proveedor }}</td>
+            <td>S/ {{ item.precio_mina }}</td>
+            <td>
+              <button class="btn-rojo" @click="quitarDelCarrito(index)">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- BOTÓN PARA ENVIAR A LA BASE DE DATOS -->
+      <div style="text-align: right; margin-top: 1rem;">
+        <button class="btn-guardar" :disabled="carrito.length === 0 || guardando" @click="guardarRequerimiento">
+          {{ guardando ? 'Guardando...' : '💾 Guardar Requerimiento' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import MainLayout from '../components/MainLayout.vue';
+import { useAuthStore } from '../stores/auth.store';
+import { useCatalogosStore } from '../stores/catalogos.store';
+import { useRouter } from 'vue-router';
+import api from '../api/axios';
 
-// Aquí inyectarás el servicio axios real luego
-const requerimientos = ref([
-  { id: 1, codigo: 'REQ-4-001', fecha: '2026-04-01', articulo: 'POSTES 2.40 MTS X 8', proveedor: 'BAILON', mina: 'MINA NORTE', cantidad: 100, estado: 'PENDIENTE', faltante: 40 },
-  { id: 2, codigo: 'REQ-4-002', fecha: '2026-04-02', articulo: 'CANTONERAS 3MTS', proveedor: 'BAILON', mina: 'MINA SUR', cantidad: 50, estado: 'COMPLETADO', faltante: 0 },
-  { id: 3, codigo: 'REQ-4-003', fecha: '2026-04-03', articulo: 'MARCHABANTES 3MTS', proveedor: 'OTROS', mina: 'CENTRAL', cantidad: 200, estado: 'PENDIENTE', faltante: 200 },
-]);
+const authStore = useAuthStore();
+const catalogos = useCatalogosStore();
+const router = useRouter();
 
-onMounted(async () => {
-  // TODO: Hacer el GET con Axios al backend
-  // try {
-  //   const res = await axios.get('/api/requerimientos');
-  //   requerimientos.value = res.data;
-  // } catch (e) {
-  //   console.error(e);
-  // }
+// Variables de estado (Reactividad)
+const guardando = ref(false);
+const carrito = ref([]); // Reemplaza tu 'elementosTemporales' de VBA
+
+// Formulario Cabecera
+const formCabecera = ref({
+    fecha: new Date().toISOString().substr(0, 10), // Fecha de hoy por defecto
+    mina_id: '',
+    supervisor_id: ''
 });
+
+// Formulario Artículo Temporal
+const articuloTemp = ref({
+    articulo_id: '',
+    proveedor_id: '',
+    cantidad: 1,
+    precio_proveedor: 0,
+    precio_mina: 0
+});
+
+// Al cargar la pantalla, vamos a traer las listas de la BD
+onMounted(() => {
+    catalogos.cargarCatalogos();
+});
+
+// -- LOGICA DEL FORMULARIO --
+
+// Cuando elige un artículo, llenamos los precios automáticamente
+const autocompletarPrecios = () => {
+    const articuloSeleccionado = catalogos.articulos.find(a => a.id === articuloTemp.value.articulo_id);
+    if (articuloSeleccionado) {
+        articuloTemp.value.precio_proveedor = articuloSeleccionado.precio_proveedor;
+        articuloTemp.value.precio_mina = articuloSeleccionado.precio_mina;
+    }
+};
+
+const agregarAlCarrito = () => {
+    if (!articuloTemp.value.articulo_id || !articuloTemp.value.proveedor_id || articuloTemp.value.cantidad <= 0) {
+        alert("Complete todos los campos del artículo correctamente.");
+        return;
+    }
+
+    // Copiamos el objeto y lo metemos al array
+    carrito.value.push({ ...articuloTemp.value });
+
+    // Limpiamos los campos para agregar otro
+    articuloTemp.value.articulo_id = '';
+    articuloTemp.value.cantidad = 1;
+    articuloTemp.value.precio_proveedor = 0;
+    articuloTemp.value.precio_mina = 0;
+};
+
+const quitarDelCarrito = (index) => {
+    carrito.value.splice(index, 1);
+};
+
+// Funciones para pintar el texto en la tabla (ya que solo tenemos IDs)
+const obtenerNombreArticulo = (id) => catalogos.articulos.find(a => a.id === id)?.nombre || '';
+const obtenerNombreProveedor = (id) => catalogos.proveedores.find(p => p.id === id)?.nombre || '';
+
+// -- GUARDAR EN NODE.JS --
+const guardarRequerimiento = async () => {
+    if (!formCabecera.value.mina_id || !formCabecera.value.supervisor_id) {
+        alert("Falta seleccionar la Mina o el Supervisor en la cabecera.");
+        return;
+    }
+
+    // Armamos el JSON exacto que espera nuestro Backend
+    const payload = {
+        fecha: formCabecera.value.fecha,
+        mina_id: formCabecera.value.mina_id,
+        supervisor_id: formCabecera.value.supervisor_id,
+        detalles: carrito.value
+    };
+
+    guardando.value = true;
+    try {
+        const respuesta = await api.post('/requerimientos', payload);
+        alert(`¡Éxito! ${respuesta.data.mensaje} | Código: ${respuesta.data.codigo_req}`);
+        
+        // Limpiamos todo tras guardar
+        carrito.value = [];
+        formCabecera.value.mina_id = '';
+        formCabecera.value.supervisor_id = '';
+    } catch (error) {
+        console.error("Error guardando:", error);
+        alert(error.response?.data?.mensaje || "Ocurrió un error al guardar.");
+    } finally {
+        guardando.value = false;
+    }
+};
+
+const salir = () => {
+    authStore.logout();
+    router.push('/login');
+};
 </script>
 
 <style scoped>
-.page-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding-bottom: 2rem;
-}
+/* CSS Básico y Limpio */
+.contenedor { max-width: 1000px; margin: 0 auto; padding: 20px; font-family: sans-serif; }
+.cabecera-pantalla { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.btn-salir { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+.grid-formulario { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.grupo { margin-bottom: 15px; display: flex; flex-direction: column; }
+.grupo label { font-weight: bold; margin-bottom: 5px; font-size: 0.9em; color: #34495e; }
+.grupo input, .grupo select { padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; }
+.grid-2-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.btn-agregar { background: #3498db; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-guardar { background: #27ae60; color: white; border: none; padding: 12px 20px; font-size: 1.1em; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-guardar:disabled { background: #95a5a6; cursor: not-allowed; }
+.btn-rojo { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
-/* Toolbox */
-.toolbox {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-radius: var(--border-radius-md);
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  background: rgba(0,0,0,0.2);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--border-radius-md);
-  padding: 0.5rem 1rem;
-  width: 350px;
-}
-
-.search-input {
-  background: transparent;
-  border: none;
-  color: white;
-  outline: none;
-  width: 100%;
-  margin-left: 0.5rem;
-  font-family: inherit;
-}
-
-.search-input::placeholder {
-  color: var(--text-muted);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-}
-
-.new-btn {
-  width: auto;
-  padding: 0.5rem 1rem;
-}
-
-.secondary-btn {
-  width: auto;
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: 1px solid var(--glass-border);
-  box-shadow: none;
-}
-
-.secondary-btn:hover {
-  background: rgba(255,255,255,0.05);
-  transform: translateY(-1px);
-}
-
-/* Data Table */
-.table-container {
-  border-radius: var(--border-radius-md);
-  overflow-x: auto;
-}
-
-.premium-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.premium-table th, 
-.premium-table td {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--glass-border);
-  white-space: nowrap;
-}
-
-.premium-table th {
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  background: rgba(0,0,0,0.2);
-}
-
-.premium-table tbody tr {
-  transition: background 0.2s;
-}
-
-.premium-table tbody tr:hover {
-  background: rgba(255,255,255,0.03);
-}
-
-.font-mono {
-  font-family: monospace;
-  color: var(--primary-hover);
-}
-
-.font-bold {
-  font-weight: 600;
-  color: white;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.text-center {
-  text-align: center;
-}
-
-/* Pills and Badges */
-.status-pill {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  display: inline-block;
-}
-
-.status-pill.completado {
-  background: var(--success-glow);
-  color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.status-pill.pendiente {
-  background: var(--error-glow);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.faltante-badge {
-  background: #fca5a5;
-  color: #7f1d1d;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.8rem;
-}
-
-.faltante-ok {
-  color: var(--success);
-  font-weight: bold;
-}
-
-/* Row Actions */
-.row-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-btn {
-  background: transparent;
-  border: 1px solid var(--glass-border);
-  border-radius: 4px;
-  padding: 0.25rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn:hover {
-  background: rgba(255,255,255,0.1);
-  transform: scale(1.1);
-}
+/* Tabla */
+.panel-tabla { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
+.tabla-moderna { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.tabla-moderna th, .tabla-moderna td { padding: 12px; border-bottom: 1px solid #ecf0f1; text-align: left; }
+.tabla-moderna th { background: #f8f9fa; color: #2c3e50; }
 </style>
