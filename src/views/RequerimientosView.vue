@@ -1,255 +1,321 @@
 <template>
-  <div class="contenedor">
-    <header class="cabecera-pantalla">
-      <h2>📝 Registrar Nuevo Requerimiento</h2>
-      <button class="btn-salir" @click="salir">Cerrar Sesión</button>
-    </header>
+  <PageLayout title="Requerimientos">
+    <template #actions>
+      <button class="btn btn-primary btn-sm" @click="abrirModalCrear">
+        <i class="bi bi-plus-lg me-1"></i> Nuevo Requerimiento
+      </button>
+    </template>
 
-    <div v-if="catalogos.cargando" class="cargando">Cargando listas...</div>
-
-    <div v-else class="grid-formulario">
-      <!-- PANEL IZQUIERDO: CABECERA DEL PEDIDO -->
-      <div class="panel">
-        <h3>1. Datos Generales</h3>
-        
-        <div class="grupo">
-          <label>Fecha:</label>
-          <input type="date" v-model="formCabecera.fecha" required>
-        </div>
-
-        <div class="grupo">
-          <label>Mina (Cliente):</label>
-          <select v-model="formCabecera.mina_id" required>
-            <option value="" disabled>Seleccione una mina</option>
-            <option v-for="m in catalogos.minas" :key="m.id" :value="m.id">
-              {{ m.nombre }} - {{ m.razon_social }}
-            </option>
-          </select>
-        </div>
-
-        <div class="grupo">
-          <label>Supervisor:</label>
-          <select v-model="formCabecera.supervisor_id" required>
-            <option value="" disabled>Seleccione un supervisor</option>
-            <option v-for="s in catalogos.supervisores" :key="s.id" :value="s.id">
-              {{ s.nombre }}
-            </option>
-          </select>
-        </div>
+    <!-- Tabla historial -->
+    <div class="mp-card p-0 overflow-hidden">
+      <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h6 class="mb-0 fw-semibold">Historial de Requerimientos</h6>
+        <span class="text-muted" style="font-size:0.8rem;">{{ store.historial.length }} registros</span>
       </div>
 
-      <!-- PANEL DERECHO: AGREGAR ARTÍCULOS -->
-      <div class="panel">
-        <h3>2. Agregar Artículo</h3>
-        
-        <div class="grupo">
-          <label>Artículo:</label>
-          <select v-model="articuloTemp.articulo_id" @change="autocompletarPrecios">
-            <option value="" disabled>Seleccione artículo</option>
-            <option v-for="a in catalogos.articulos" :key="a.id" :value="a.id">
-              {{ a.codigo }} - {{ a.nombre }}
-            </option>
-          </select>
-        </div>
-
-        <div class="grupo">
-          <label>Proveedor:</label>
-          <select v-model="articuloTemp.proveedor_id">
-            <option value="" disabled>Seleccione proveedor</option>
-            <option v-for="p in catalogos.proveedores" :key="p.id" :value="p.id">
-              {{ p.nombre }}
-            </option>
-          </select>
-        </div>
-
-        <div class="grid-2-col">
-          <div class="grupo">
-            <label>Cantidad:</label>
-            <input type="number" v-model="articuloTemp.cantidad" min="1">
-          </div>
-          <div class="grupo">
-            <label>P. Proveedor:</label>
-            <input type="number" step="0.01" v-model="articuloTemp.precio_proveedor" readonly style="background: #eee;">
-          </div>
-          <div class="grupo">
-            <label>P. Mina:</label>
-            <input type="number" step="0.01" v-model="articuloTemp.precio_mina" readonly style="background: #eee;">
-          </div>
-        </div>
-
-        <button class="btn-agregar" @click="agregarAlCarrito">➕ Agregar a la lista</button>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Fecha</th>
+              <th>Mina</th>
+              <th>Supervisor</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="store.cargando">
+              <td colspan="6" class="text-center py-5 text-muted">
+                <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+              </td>
+            </tr>
+            <tr v-else-if="store.historial.length === 0">
+              <td colspan="6" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-4 d-block mb-2"></i>Sin requerimientos
+              </td>
+            </tr>
+            <tr v-for="r in store.historial" :key="r.id">
+              <td><span class="fw-medium text-primary">{{ r.codigo_req }}</span></td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.mina }}</td>
+              <td>{{ r.supervisor }}</td>
+              <td><span :class="badgeClass(r.estado)">{{ r.estado }}</span></td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-secondary" @click="verDetalles(r)" title="Ver detalles">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- TABLA DE ELEMENTOS TEMPORALES (Tu antiguo ListBox) -->
-    <div class="panel-tabla">
-      <h3>Lista de Artículos a Pedir</h3>
-      <table class="tabla-moderna">
-        <thead>
-          <tr>
-            <th>Artículo</th>
-            <th>Proveedor</th>
-            <th>Cantidad</th>
-            <th>P. Prov</th>
-            <th>P. Mina</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="carrito.length === 0">
-            <td colspan="6" style="text-align: center; color: #7f8c8d;">No hay artículos agregados aún.</td>
-          </tr>
-          <tr v-for="(item, index) in carrito" :key="index">
-            <td>{{ obtenerNombreArticulo(item.articulo_id) }}</td>
-            <td>{{ obtenerNombreProveedor(item.proveedor_id) }}</td>
-            <td>{{ item.cantidad }}</td>
-            <td>S/ {{ item.precio_proveedor }}</td>
-            <td>S/ {{ item.precio_mina }}</td>
-            <td>
-              <button class="btn-rojo" @click="quitarDelCarrito(index)">🗑️</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- ====== MODAL CREAR ====== -->
+    <div class="modal fade" id="modalCrear" tabindex="-1" ref="modalCrearRef">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-semibold">Nuevo Requerimiento</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Cabecera del requerimiento -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label fw-medium" style="font-size:0.85rem;">Fecha</label>
+                <input type="date" class="form-control" v-model="form.fecha" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-medium" style="font-size:0.85rem;">Mina</label>
+                <select class="form-select" v-model="form.mina_id" required>
+                  <option value="" disabled>Selecciona una mina</option>
+                  <option v-for="m in catStore.minas" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-medium" style="font-size:0.85rem;">Supervisor</label>
+                <select class="form-select" v-model="form.supervisor_id">
+                  <option value="">Sin asignar</option>
+                  <option v-for="s in catStore.supervisores" :key="s.id" :value="s.id">{{ s.nombre }}</option>
+                </select>
+              </div>
+            </div>
 
-      <!-- BOTÓN PARA ENVIAR A LA BASE DE DATOS -->
-      <div style="text-align: right; margin-top: 1rem;">
-        <button class="btn-guardar" :disabled="carrito.length === 0 || guardando" @click="guardarRequerimiento">
-          {{ guardando ? 'Guardando...' : '💾 Guardar Requerimiento' }}
-        </button>
+            <!-- Líneas de detalle -->
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-semibold mb-0">Artículos del pedido</h6>
+              <button class="btn btn-sm btn-outline-primary" @click="agregarLinea">
+                <i class="bi bi-plus-lg me-1"></i> Agregar artículo
+              </button>
+            </div>
+
+            <div class="table-responsive mp-card p-0 overflow-hidden mb-2">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th>Artículo</th>
+                    <th>Proveedor</th>
+                    <th style="width:110px;">Cantidad</th>
+                    <th style="width:120px;">P. Proveedor</th>
+                    <th style="width:120px;">P. Mina</th>
+                    <th style="width:50px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="form.detalles.length === 0">
+                    <td colspan="6" class="text-center text-muted py-3" style="font-size:0.85rem;">
+                      Agrega al menos un artículo
+                    </td>
+                  </tr>
+                  <tr v-for="(linea, i) in form.detalles" :key="i">
+                    <td>
+                      <select class="form-select form-select-sm" v-model="linea.articulo_id" @change="onArticuloChange(linea)">
+                        <option value="" disabled>Seleccionar</option>
+                        <option v-for="a in catStore.articulos" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" v-model="linea.proveedor_id">
+                        <option value="" disabled>Seleccionar</option>
+                        <option v-for="p in catStore.proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" v-model.number="linea.cantidad" min="1" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" v-model.number="linea.precio_proveedor" min="0" step="0.01" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" v-model.number="linea.precio_mina" min="0" step="0.01" />
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-danger" @click="quitarLinea(i)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div v-if="mensajeError" class="alert alert-danger py-2" style="font-size:0.85rem;">
+              <i class="bi bi-exclamation-circle me-2"></i>{{ mensajeError }}
+            </div>
+            <div v-if="mensajeExito" class="alert alert-success py-2" style="font-size:0.85rem;">
+              <i class="bi bi-check-circle me-2"></i>{{ mensajeExito }}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-primary" @click="guardar" :disabled="guardando">
+              <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
+              {{ guardando ? 'Guardando...' : 'Crear Requerimiento' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- ====== MODAL DETALLES ====== -->
+    <div class="modal fade" id="modalDetalles" tabindex="-1" ref="modalDetallesRef">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div>
+              <h5 class="modal-title fw-semibold mb-0">{{ reqSeleccionado?.codigo_req }}</h5>
+              <div class="text-muted" style="font-size:0.8rem;">
+                {{ reqSeleccionado?.mina }} · {{ reqSeleccionado?.fecha }} · <span :class="badgeClass(reqSeleccionado?.estado)">{{ reqSeleccionado?.estado }}</span>
+              </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-0">
+            <div class="table-responsive">
+              <table class="table mb-0">
+                <thead>
+                  <tr>
+                    <th>Artículo</th>
+                    <th>Proveedor</th>
+                    <th class="text-end">Pedido</th>
+                    <th class="text-end">Entregado</th>
+                    <th class="text-end">Faltante</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="cargandoDetalles">
+                    <td colspan="5" class="text-center py-4 text-muted">
+                      <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                    </td>
+                  </tr>
+                  <tr v-for="d in detallesActuales" :key="d.id">
+                    <td>{{ d.articulo }}</td>
+                    <td>{{ d.proveedor }}</td>
+                    <td class="text-end fw-medium">{{ d.pedido }}</td>
+                    <td class="text-end text-success">{{ d.entregado }}</td>
+                    <td class="text-end" :class="d.faltante > 0 ? 'text-danger fw-medium' : 'text-success'">
+                      {{ d.faltante }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </PageLayout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth.store';
+import { Modal } from 'bootstrap';
+import PageLayout from '../components/PageLayout.vue';
+import { useRequerimientosStore } from '../stores/requerimientos.store';
 import { useCatalogosStore } from '../stores/catalogos.store';
-import { useRouter } from 'vue-router';
-import api from '../api/axios';
 
-const authStore = useAuthStore();
-const catalogos = useCatalogosStore();
-const router = useRouter();
+const store = useRequerimientosStore();
+const catStore = useCatalogosStore();
 
-// Variables de estado (Reactividad)
+const modalCrearRef = ref(null);
+const modalDetallesRef = ref(null);
+let bsModalCrear = null;
+let bsModalDetalles = null;
+
 const guardando = ref(false);
-const carrito = ref([]); // Reemplaza tu 'elementosTemporales' de VBA
+const mensajeError = ref('');
+const mensajeExito = ref('');
+const reqSeleccionado = ref(null);
+const detallesActuales = ref([]);
+const cargandoDetalles = ref(false);
 
-// Formulario Cabecera
-const formCabecera = ref({
-    fecha: new Date().toISOString().substr(0, 10), // Fecha de hoy por defecto
-    mina_id: '',
-    supervisor_id: ''
+const formVacio = () => ({
+  fecha: new Date().toISOString().split('T')[0],
+  mina_id: '',
+  supervisor_id: '',
+  detalles: []
+});
+const form = ref(formVacio());
+
+onMounted(async () => {
+  await Promise.all([store.cargarHistorial(), catStore.cargarCatalogos()]);
+  bsModalCrear = new Modal(modalCrearRef.value);
+  bsModalDetalles = new Modal(modalDetallesRef.value);
 });
 
-// Formulario Artículo Temporal
-const articuloTemp = ref({
-    articulo_id: '',
-    proveedor_id: '',
-    cantidad: 1,
-    precio_proveedor: 0,
-    precio_mina: 0
-});
-
-// Al cargar la pantalla, vamos a traer las listas de la BD
-onMounted(() => {
-    catalogos.cargarCatalogos();
-});
-
-// -- LOGICA DEL FORMULARIO --
-
-// Cuando elige un artículo, llenamos los precios automáticamente
-const autocompletarPrecios = () => {
-    const articuloSeleccionado = catalogos.articulos.find(a => a.id === articuloTemp.value.articulo_id);
-    if (articuloSeleccionado) {
-        articuloTemp.value.precio_proveedor = articuloSeleccionado.precio_proveedor;
-        articuloTemp.value.precio_mina = articuloSeleccionado.precio_mina;
-    }
+const abrirModalCrear = () => {
+  form.value = formVacio();
+  mensajeError.value = '';
+  mensajeExito.value = '';
+  bsModalCrear.show();
 };
 
-const agregarAlCarrito = () => {
-    if (!articuloTemp.value.articulo_id || !articuloTemp.value.proveedor_id || articuloTemp.value.cantidad <= 0) {
-        alert("Complete todos los campos del artículo correctamente.");
-        return;
-    }
-
-    // Copiamos el objeto y lo metemos al array
-    carrito.value.push({ ...articuloTemp.value });
-
-    // Limpiamos los campos para agregar otro
-    articuloTemp.value.articulo_id = '';
-    articuloTemp.value.cantidad = 1;
-    articuloTemp.value.precio_proveedor = 0;
-    articuloTemp.value.precio_mina = 0;
+const agregarLinea = () => {
+  form.value.detalles.push({
+    articulo_id: '', proveedor_id: '',
+    cantidad: 1, precio_proveedor: 0, precio_mina: 0
+  });
 };
 
-const quitarDelCarrito = (index) => {
-    carrito.value.splice(index, 1);
+const quitarLinea = (i) => form.value.detalles.splice(i, 1);
+
+const onArticuloChange = (linea) => {
+  const art = catStore.articulos.find(a => a.id === linea.articulo_id);
+  if (art) {
+    linea.precio_proveedor = art.precio_proveedor;
+    linea.precio_mina = art.precio_mina;
+  }
 };
 
-// Funciones para pintar el texto en la tabla (ya que solo tenemos IDs)
-const obtenerNombreArticulo = (id) => catalogos.articulos.find(a => a.id === id)?.nombre || '';
-const obtenerNombreProveedor = (id) => catalogos.proveedores.find(p => p.id === id)?.nombre || '';
-
-// -- GUARDAR EN NODE.JS --
-const guardarRequerimiento = async () => {
-    if (!formCabecera.value.mina_id || !formCabecera.value.supervisor_id) {
-        alert("Falta seleccionar la Mina o el Supervisor en la cabecera.");
-        return;
-    }
-
-    // Armamos el JSON exacto que espera nuestro Backend
-    const payload = {
-        fecha: formCabecera.value.fecha,
-        mina_id: formCabecera.value.mina_id,
-        supervisor_id: formCabecera.value.supervisor_id,
-        detalles: carrito.value
-    };
-
-    guardando.value = true;
-    try {
-        const respuesta = await api.post('/requerimientos', payload);
-        alert(`¡Éxito! ${respuesta.data.mensaje} | Código: ${respuesta.data.codigo_req}`);
-        
-        // Limpiamos todo tras guardar
-        carrito.value = [];
-        formCabecera.value.mina_id = '';
-        formCabecera.value.supervisor_id = '';
-    } catch (error) {
-        console.error("Error guardando:", error);
-        alert(error.response?.data?.mensaje || "Ocurrió un error al guardar.");
-    } finally {
-        guardando.value = false;
-    }
+const guardar = async () => {
+  mensajeError.value = '';
+  mensajeExito.value = '';
+  if (!form.value.fecha || !form.value.mina_id) {
+    mensajeError.value = 'Debes seleccionar fecha y mina.';
+    return;
+  }
+  if (form.value.detalles.length === 0) {
+    mensajeError.value = 'Agrega al menos un artículo al pedido.';
+    return;
+  }
+  const invalido = form.value.detalles.some(d => !d.articulo_id || !d.proveedor_id || d.cantidad < 1);
+  if (invalido) {
+    mensajeError.value = 'Completa todos los campos de cada artículo.';
+    return;
+  }
+  guardando.value = true;
+  const result = await store.crearRequerimiento({
+    fecha: form.value.fecha,
+    mina_id: form.value.mina_id,
+    supervisor_id: form.value.supervisor_id || null,
+    detalles: form.value.detalles
+  });
+  guardando.value = false;
+  if (result.success) {
+    mensajeExito.value = `Requerimiento ${result.codigo} creado exitosamente.`;
+    setTimeout(() => bsModalCrear.hide(), 1500);
+  } else {
+    mensajeError.value = result.mensaje;
+  }
 };
 
-const salir = () => {
-    authStore.logout();
-    router.push('/login');
+const verDetalles = async (r) => {
+  reqSeleccionado.value = r;
+  detallesActuales.value = [];
+  cargandoDetalles.value = true;
+  bsModalDetalles.show();
+  detallesActuales.value = await store.getDetalles(r.id);
+  cargandoDetalles.value = false;
+};
+
+const badgeClass = (estado) => {
+  const map = { PENDIENTE: 'badge-pendiente', COMPLETADO: 'badge-completado', CANCELADO: 'badge-cancelado' };
+  return map[estado] || 'badge-pendiente';
 };
 </script>
-
-<style scoped>
-/* CSS Básico y Limpio */
-.contenedor { max-width: 1000px; margin: 0 auto; padding: 20px; font-family: sans-serif; }
-.cabecera-pantalla { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.btn-salir { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-.grid-formulario { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.grupo { margin-bottom: 15px; display: flex; flex-direction: column; }
-.grupo label { font-weight: bold; margin-bottom: 5px; font-size: 0.9em; color: #34495e; }
-.grupo input, .grupo select { padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; }
-.grid-2-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.btn-agregar { background: #3498db; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; }
-.btn-guardar { background: #27ae60; color: white; border: none; padding: 12px 20px; font-size: 1.1em; border-radius: 4px; cursor: pointer; font-weight: bold; }
-.btn-guardar:disabled { background: #95a5a6; cursor: not-allowed; }
-.btn-rojo { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-
-/* Tabla */
-.panel-tabla { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
-.tabla-moderna { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.tabla-moderna th, .tabla-moderna td { padding: 12px; border-bottom: 1px solid #ecf0f1; text-align: left; }
-.tabla-moderna th { background: #f8f9fa; color: #2c3e50; }
-</style>

@@ -1,151 +1,245 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* ====================================================
+   Madera Poltand ERP — Global Styles
+   Bootstrap 5 override + custom utilities
+   ==================================================== */
 
 :root {
-  /* Dynamic Gradients for backgrounds */
-  --bg-gradient-1: #0f172a;
-  --bg-gradient-2: #1e293b;
-  --bg-gradient-3: #111827;
-
-  /* Glassmorphism Variables */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --glass-blur: blur(12px);
-  
-  /* Primary accents (Cyan to Blue) */
-  --primary: #0ea5e9;
-  --primary-hover: #38bdf8;
-  --primary-glow: rgba(14, 165, 233, 0.4);
-  
-  /* Status Colors */
-  --success: #10b981;
-  --success-glow: rgba(16, 185, 129, 0.2);
-  --error: #ef4444;
-  --error-glow: rgba(239, 68, 68, 0.2);
-  --warning: #f59e0b;
-
-  /* Text colors */
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  
-  /* General Layout */
-  --border-radius-lg: 16px;
-  --border-radius-md: 8px;
+  --mp-sidebar-bg: #1e293b;
+  --mp-sidebar-width: 240px;
+  --mp-accent: #2563eb;
+  --mp-accent-hover: #1d4ed8;
+  --mp-success: #16a34a;
+  --mp-danger: #dc2626;
+  --mp-body-bg: #f1f5f9;
+  --mp-card-bg: #ffffff;
+  --mp-text: #0f172a;
+  --mp-text-muted: #64748b;
+  --mp-border: #e2e8f0;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* Base */
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-gradient-1);
-  background-image: radial-gradient(at 0% 0%, var(--bg-gradient-2) 0px, transparent 50%),
-                    radial-gradient(at 100% 0%, var(--bg-gradient-3) 0px, transparent 50%);
-  background-attachment: fixed;
-  color: var(--text-main);
+  background-color: var(--mp-body-bg);
+  color: var(--mp-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.9rem;
+}
+
+/* Sidebar */
+.mp-sidebar {
+  width: var(--mp-sidebar-width);
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--mp-sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+  padding: 0;
+  overflow-y: auto;
 }
 
-/* Glassmorphism Base Class */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: var(--border-radius-lg);
+.mp-sidebar .nav-link {
+  color: #94a3b8;
+  border-radius: 8px;
+  margin: 2px 12px;
+  padding: 9px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* Base Inputs */
-.premium-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--border-radius-md);
-  color: var(--text-main);
-  font-size: 1rem;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.3s ease;
-  outline: none;
+.mp-sidebar .nav-link:hover {
+  color: #f1f5f9;
+  background-color: rgba(255, 255, 255, 0.07);
 }
 
-.premium-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-glow);
-  background: rgba(0, 0, 0, 0.3);
+.mp-sidebar .nav-link.active {
+  color: #fff;
+  background-color: var(--mp-accent);
 }
 
-.premium-input::placeholder {
-  color: var(--text-muted);
-}
-
-/* Base Buttons */
-.premium-btn {
-  width: 100%;
-  padding: 0.75rem 1.5rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: 1rem;
+.mp-sidebar .nav-section {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 14px 0 var(--primary-glow);
+  padding: 20px 24px 6px;
 }
 
-.premium-btn:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+/* Main layout */
+.mp-main {
+  margin-left: var(--mp-sidebar-width);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.premium-btn:active:not(:disabled) {
-  transform: translateY(1px);
+.mp-topbar {
+  background: #fff;
+  border-bottom: 1px solid var(--mp-border);
+  padding: 12px 28px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
-.premium-btn:disabled {
-  background-color: var(--glass-border);
-  color: var(--text-muted);
-  cursor: not-allowed;
-  box-shadow: none;
+.mp-content {
+  padding: 28px;
+  flex: 1;
 }
 
-/* Vue Router Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+/* Cards */
+.mp-card {
+  background: var(--mp-card-bg);
+  border: 1px solid var(--mp-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.fade-enter-from {
-  opacity: 0;
-  transform: translateY(10px); /* Sutil desplazamiento hacia arriba */
+/* Tables */
+.table-responsive {
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+.table thead th {
+  background-color: #f8fafc;
+  color: var(--mp-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--mp-border);
+  padding: 12px 16px;
 }
 
-/* Custom Scrollbar for a premium feel */
+.table tbody td {
+  padding: 12px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--mp-text);
+  font-size: 0.875rem;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Badges de estado */
+.badge-pendiente {
+  background-color: #fef3c7;
+  color: #92400e;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+}
+
+.badge-completado {
+  background-color: #dcfce7;
+  color: #14532d;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+}
+
+.badge-cancelado {
+  background-color: #fee2e2;
+  color: #7f1d1d;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--mp-accent) !important;
+  border-color: var(--mp-accent) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--mp-accent-hover) !important;
+  border-color: var(--mp-accent-hover) !important;
+}
+
+/* Stat cards */
+.stat-card {
+  border-radius: 12px;
+  border: 1px solid var(--mp-border);
+  background: white;
+  padding: 20px 24px;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+/* Login */
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 16px;
+  padding: 40px 36px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+/* Modals */
+.modal-header {
+  border-bottom: 1px solid var(--mp-border);
+  padding: 18px 24px;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--mp-border);
+  padding: 16px 24px;
+}
+
+/* Form controls */
+.form-control:focus, .form-select:focus {
+  border-color: var(--mp-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.1); 
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.2); 
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.4); 
+  background: #cbd5e1;
+  border-radius: 3px;
 }
