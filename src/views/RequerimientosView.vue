@@ -14,7 +14,7 @@
       </div>
 
       <div class="table-responsive">
-        <table class="table mb-0">
+        <table class="table mb-0" style="font-size:0.85rem;">
           <thead>
             <tr>
               <th>Código</th>
@@ -22,17 +22,19 @@
               <th>Mina</th>
               <th>Supervisor</th>
               <th>Estado</th>
-              <th class="text-end">Acciones</th>
+              <th class="text-end" style="color:#2563eb;">Total Prov.</th>
+              <th class="text-end" style="color:#16a34a;">Total Mina</th>
+              <th class="text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="store.cargando">
-              <td colspan="6" class="text-center py-5 text-muted">
+              <td colspan="8" class="text-center py-5 text-muted">
                 <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
               </td>
             </tr>
             <tr v-else-if="store.historial.length === 0">
-              <td colspan="6" class="text-center py-5 text-muted">
+              <td colspan="8" class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-4 d-block mb-2"></i>Sin requerimientos
               </td>
             </tr>
@@ -42,13 +44,31 @@
               <td>{{ r.mina }}</td>
               <td>{{ r.supervisor }}</td>
               <td><span :class="badgeClass(r.estado)">{{ r.estado }}</span></td>
-              <td class="text-end">
+              <td class="text-end fw-semibold" style="color:#2563eb;">
+                S/ {{ Number(r.total_proveedor).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+              </td>
+              <td class="text-end fw-semibold" style="color:#16a34a;">
+                S/ {{ Number(r.total_mina).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+              </td>
+              <td class="text-center">
                 <button class="btn btn-sm btn-outline-secondary" @click="verDetalles(r)" title="Ver detalles">
                   <i class="bi bi-eye"></i>
                 </button>
               </td>
             </tr>
           </tbody>
+          <tfoot v-if="store.historial.length > 0" class="table-light">
+            <tr>
+              <td colspan="5" class="text-end fw-bold" style="font-size:0.82rem;">TOTAL GENERAL:</td>
+              <td class="text-end fw-bold" style="color:#2563eb;">
+                S/ {{ store.historial.reduce((s, r) => s + Number(r.total_proveedor), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+              </td>
+              <td class="text-end fw-bold" style="color:#16a34a;">
+                S/ {{ store.historial.reduce((s, r) => s + Number(r.total_mina), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
@@ -162,20 +182,20 @@
 
     <!-- ====== MODAL DETALLES ====== -->
     <div class="modal fade" id="modalDetalles" tabindex="-1" ref="modalDetallesRef">
-      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
             <div>
               <h5 class="modal-title fw-semibold mb-0">{{ reqSeleccionado?.codigo_req }}</h5>
               <div class="text-muted" style="font-size:0.8rem;">
-                {{ reqSeleccionado?.mina }} · {{ reqSeleccionado?.fecha }} · <span :class="badgeClass(reqSeleccionado?.estado)">{{ reqSeleccionado?.estado }}</span>
+                {{ reqSeleccionado?.mina }} · {{ reqSeleccionado?.supervisor }} · {{ reqSeleccionado?.fecha }} · <span :class="badgeClass(reqSeleccionado?.estado)">{{ reqSeleccionado?.estado }}</span>
               </div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body p-0">
             <div class="table-responsive">
-              <table class="table mb-0">
+              <table class="table mb-0" style="font-size:0.85rem;">
                 <thead>
                   <tr>
                     <th>Artículo</th>
@@ -183,11 +203,15 @@
                     <th class="text-end">Pedido</th>
                     <th class="text-end">Entregado</th>
                     <th class="text-end">Faltante</th>
+                    <th class="text-end" style="color:#2563eb;">P. Prov.</th>
+                    <th class="text-end" style="color:#2563eb;">Total Prov.</th>
+                    <th class="text-end" style="color:#16a34a;">P. Mina</th>
+                    <th class="text-end" style="color:#16a34a;">Total Mina</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-if="cargandoDetalles">
-                    <td colspan="5" class="text-center py-4 text-muted">
+                    <td colspan="9" class="text-center py-4 text-muted">
                       <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
                     </td>
                   </tr>
@@ -199,8 +223,29 @@
                     <td class="text-end" :class="d.faltante > 0 ? 'text-danger fw-medium' : 'text-success'">
                       {{ d.faltante }}
                     </td>
+                    <td class="text-end" style="color:#2563eb;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
+                    <td class="text-end fw-semibold" style="color:#2563eb;">
+                      {{ (Number(d.pedido) * Number(d.precio_proveedor)).toFixed(2) }}
+                    </td>
+                    <td class="text-end" style="color:#16a34a;">{{ Number(d.precio_mina).toFixed(2) }}</td>
+                    <td class="text-end fw-semibold" style="color:#16a34a;">
+                      {{ (Number(d.pedido) * Number(d.precio_mina)).toFixed(2) }}
+                    </td>
                   </tr>
                 </tbody>
+                <tfoot v-if="detallesActuales.length > 0" class="table-light">
+                  <tr>
+                    <td colspan="5" class="text-end fw-bold" style="font-size:0.82rem;">TOTALES:</td>
+                    <td class="text-end"></td>
+                    <td class="text-end fw-bold" style="color:#2563eb;">
+                      S/ {{ detallesActuales.reduce((s, d) => s + Number(d.pedido) * Number(d.precio_proveedor), 0).toFixed(2) }}
+                    </td>
+                    <td class="text-end"></td>
+                    <td class="text-end fw-bold" style="color:#16a34a;">
+                      S/ {{ detallesActuales.reduce((s, d) => s + Number(d.pedido) * Number(d.precio_mina), 0).toFixed(2) }}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
