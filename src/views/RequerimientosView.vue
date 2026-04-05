@@ -86,32 +86,41 @@
             <div class="row g-3 mb-4">
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Fecha</label>
-                <input type="date" class="form-control" v-model="form.fecha" required />
+                <input type="date" class="form-control" v-model="form.fecha" required
+                  ref="fechaRef"
+                  @keydown.enter.prevent="() => minaRef?.focusOpen()"
+                />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Mina</label>
                 <SearchableSelect
+                  ref="minaRef"
                   v-model="form.mina_id"
                   :options="catStore.minas"
                   placeholder="Selecciona una mina"
+                  @navigate="() => proveedorRef?.focusOpen()"
                 />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Proveedor</label>
                 <SearchableSelect
+                  ref="proveedorRef"
                   v-model="form.proveedor_id"
                   :options="catStore.proveedores"
                   placeholder="Selecciona un proveedor"
+                  @navigate="() => supervisorRef?.focusOpen()"
                 />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Supervisor</label>
                 <SearchableSelect
+                  ref="supervisorRef"
                   v-model="form.supervisor_id"
                   :options="catStore.supervisores"
                   placeholder="Sin asignar"
                   :allow-empty="true"
                   empty-label="Sin asignar"
+                  @navigate="onSupervisorNavigate"
                 />
               </div>
             </div>
@@ -119,7 +128,10 @@
             <!-- Líneas de detalle -->
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="fw-semibold mb-0">Artículos del pedido</h6>
-              <button class="btn btn-sm btn-outline-primary" @click="agregarLinea">
+              <button class="btn btn-sm btn-outline-primary" ref="agregarBtnRef"
+                @click="agregarYFocus"
+                @keydown.enter.prevent="agregarYFocus"
+              >
                 <i class="bi bi-plus-lg me-1"></i> Agregar artículo
               </button>
             </div>
@@ -144,20 +156,34 @@
                   <tr v-for="(linea, i) in form.detalles" :key="i">
                     <td style="min-width:240px;">
                       <SearchableSelect
+                        :ref="el => { if(el) articuloRefs[i] = el }"
                         v-model="linea.articulo_id"
                         :options="catStore.articulos"
                         placeholder="Seleccionar artículo"
                         @update:modelValue="onArticuloChange(linea)"
+                        @navigate="() => nextTick(() => cantidadRefs[i]?.focus())"
                       />
                     </td>
                     <td>
-                      <input type="number" class="form-control form-control-sm" v-model.number="linea.cantidad" min="1" />
+                      <input type="number" class="form-control form-control-sm"
+                        :ref="el => { if(el) cantidadRefs[i] = el }"
+                        v-model.number="linea.cantidad" min="1"
+                        @keydown.enter.prevent="() => nextTick(() => precioProvRefs[i]?.focus())"
+                      />
                     </td>
                     <td>
-                      <input type="number" class="form-control form-control-sm" v-model.number="linea.precio_proveedor" min="0" step="0.01" />
+                      <input type="number" class="form-control form-control-sm"
+                        :ref="el => { if(el) precioProvRefs[i] = el }"
+                        v-model.number="linea.precio_proveedor" min="0" step="0.01"
+                        @keydown.enter.prevent="() => nextTick(() => precioMinaRefs[i]?.focus())"
+                      />
                     </td>
                     <td>
-                      <input type="number" class="form-control form-control-sm" v-model.number="linea.precio_mina" min="0" step="0.01" />
+                      <input type="number" class="form-control form-control-sm"
+                        :ref="el => { if(el) precioMinaRefs[i] = el }"
+                        v-model.number="linea.precio_mina" min="0" step="0.01"
+                        @keydown.enter.prevent="agregarYFocus"
+                      />
                     </td>
                     <td>
                       <button class="btn btn-sm btn-outline-danger" @click="quitarLinea(i)">
@@ -266,7 +292,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, nextTick, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
@@ -287,6 +313,17 @@ const mensajeExito = ref('');
 const reqSeleccionado = ref(null);
 const detallesActuales = ref([]);
 const cargandoDetalles = ref(false);
+
+// ---- Refs para navegación por teclado ----
+const fechaRef      = ref(null);
+const minaRef       = ref(null);
+const proveedorRef  = ref(null);
+const supervisorRef = ref(null);
+const agregarBtnRef = ref(null);
+const articuloRefs   = [];
+const cantidadRefs   = [];
+const precioProvRefs = [];
+const precioMinaRefs = [];
 
 const formVacio = () => ({
   fecha: new Date().toISOString().split('T')[0],
@@ -316,6 +353,14 @@ const agregarLinea = () => {
     cantidad: 1, precio_proveedor: 0, precio_mina: 0
   });
 };
+
+const agregarYFocus = () => {
+  agregarLinea();
+  const idx = form.value.detalles.length - 1;
+  nextTick(() => articuloRefs[idx]?.focusOpen());
+};
+
+const onSupervisorNavigate = () => nextTick(() => agregarBtnRef.value?.focus());
 
 const quitarLinea = (i) => form.value.detalles.splice(i, 1);
 

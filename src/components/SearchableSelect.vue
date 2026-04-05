@@ -65,7 +65,7 @@ const props = defineProps({
   invalid:    { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'navigate']);
 
 const open      = ref(false);
 const query     = ref('');
@@ -96,6 +96,7 @@ const close = () => { open.value = false; query.value = ''; };
 const select = (val, _label) => {
   emit('update:modelValue', val ?? '');
   close();
+  nextTick(() => emit('navigate'));
 };
 
 const selectFirst = () => {
@@ -113,6 +114,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onOutsideClick))
 
 // Cerrar si el v-model cambia desde fuera
 watch(() => props.modelValue, () => { if (open.value) close(); });
+
+// Exponer para navegación por teclado desde el padre
+defineExpose({ focusOpen: openDropdown });
 </script>
 
 <style scoped>
