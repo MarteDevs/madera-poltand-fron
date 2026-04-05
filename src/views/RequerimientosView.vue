@@ -64,18 +64,25 @@
           <div class="modal-body">
             <!-- Cabecera del requerimiento -->
             <div class="row g-3 mb-4">
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Fecha</label>
                 <input type="date" class="form-control" v-model="form.fecha" required />
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Mina</label>
                 <select class="form-select" v-model="form.mina_id" required>
                   <option value="" disabled>Selecciona una mina</option>
                   <option v-for="m in catStore.minas" :key="m.id" :value="m.id">{{ m.nombre }}</option>
                 </select>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
+                <label class="form-label fw-medium" style="font-size:0.85rem;">Proveedor</label>
+                <select class="form-select" v-model="form.proveedor_id" required>
+                  <option value="" disabled>Selecciona un proveedor</option>
+                  <option v-for="p in catStore.proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Supervisor</label>
                 <select class="form-select" v-model="form.supervisor_id">
                   <option value="">Sin asignar</option>
@@ -97,7 +104,6 @@
                 <thead>
                   <tr>
                     <th>Artículo</th>
-                    <th>Proveedor</th>
                     <th style="width:110px;">Cantidad</th>
                     <th style="width:120px;">P. Proveedor</th>
                     <th style="width:120px;">P. Mina</th>
@@ -106,7 +112,7 @@
                 </thead>
                 <tbody>
                   <tr v-if="form.detalles.length === 0">
-                    <td colspan="6" class="text-center text-muted py-3" style="font-size:0.85rem;">
+                    <td colspan="5" class="text-center text-muted py-3" style="font-size:0.85rem;">
                       Agrega al menos un artículo
                     </td>
                   </tr>
@@ -115,12 +121,6 @@
                       <select class="form-select form-select-sm" v-model="linea.articulo_id" @change="onArticuloChange(linea)">
                         <option value="" disabled>Seleccionar</option>
                         <option v-for="a in catStore.articulos" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                      </select>
-                    </td>
-                    <td>
-                      <select class="form-select form-select-sm" v-model="linea.proveedor_id">
-                        <option value="" disabled>Seleccionar</option>
-                        <option v-for="p in catStore.proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
                       </select>
                     </td>
                     <td>
@@ -238,6 +238,7 @@ const cargandoDetalles = ref(false);
 const formVacio = () => ({
   fecha: new Date().toISOString().split('T')[0],
   mina_id: '',
+  proveedor_id: '',
   supervisor_id: '',
   detalles: []
 });
@@ -258,7 +259,7 @@ const abrirModalCrear = () => {
 
 const agregarLinea = () => {
   form.value.detalles.push({
-    articulo_id: '', proveedor_id: '',
+    articulo_id: '',
     cantidad: 1, precio_proveedor: 0, precio_mina: 0
   });
 };
@@ -280,21 +281,30 @@ const guardar = async () => {
     mensajeError.value = 'Debes seleccionar fecha y mina.';
     return;
   }
+  if (!form.value.proveedor_id) {
+    mensajeError.value = 'Debes seleccionar un proveedor.';
+    return;
+  }
   if (form.value.detalles.length === 0) {
     mensajeError.value = 'Agrega al menos un artículo al pedido.';
     return;
   }
-  const invalido = form.value.detalles.some(d => !d.articulo_id || !d.proveedor_id || d.cantidad < 1);
+  const invalido = form.value.detalles.some(d => !d.articulo_id || d.cantidad < 1);
   if (invalido) {
-    mensajeError.value = 'Completa todos los campos de cada artículo.';
+    mensajeError.value = 'Selecciona el artículo e ingresa una cantidad válida en cada línea.';
     return;
   }
   guardando.value = true;
+  // Propagamos el proveedor de la cabecera a cada línea de detalle
+  const detallesConProveedor = form.value.detalles.map(d => ({
+    ...d,
+    proveedor_id: form.value.proveedor_id
+  }));
   const result = await store.crearRequerimiento({
     fecha: form.value.fecha,
     mina_id: form.value.mina_id,
     supervisor_id: form.value.supervisor_id || null,
-    detalles: form.value.detalles
+    detalles: detallesConProveedor
   });
   guardando.value = false;
   if (result.success) {
