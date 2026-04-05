@@ -75,13 +75,13 @@
 
     <!-- ====== MODAL CREAR ====== -->
     <div class="modal fade" id="modalCrear" tabindex="-1" ref="modalCrearRef">
-      <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
+      <div class="modal-dialog modal-xl" style="max-width:1300px;">
+        <div class="modal-content" style="height:88vh; display:flex; flex-direction:column;">
           <div class="modal-header">
             <h5 class="modal-title fw-semibold">Nuevo Requerimiento</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="overflow-y:auto; flex:1; display:flex; flex-direction:column;">
             <!-- Cabecera del requerimiento -->
             <div class="row g-3 mb-4">
               <div class="col-md-3">
@@ -124,7 +124,7 @@
               </button>
             </div>
 
-            <div class="table-responsive mp-card p-0 overflow-hidden mb-2">
+            <div class="table-responsive mp-card p-0 overflow-auto mb-2" style="flex:1;">
               <table class="table table-sm mb-0">
                 <thead>
                   <tr>
