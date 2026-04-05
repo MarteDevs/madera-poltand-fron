@@ -176,7 +176,23 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">N° Viaje</label>
-                <input type="text" class="form-control" v-model="form.viaje" placeholder="Ej: 10-VIAJE" />
+                <select class="form-select" v-model="form.viaje">
+                  <option value="">— Seleccionar —</option>
+                  <option>1-VIAJE</option>
+                  <option>2-VIAJE</option>
+                  <option>3-VIAJE</option>
+                  <option>4-VIAJE</option>
+                  <option>5-VIAJE</option>
+                  <option>6-VIAJE</option>
+                  <option>7-VIAJE</option>
+                  <option>8-VIAJE</option>
+                  <option>9-VIAJE</option>
+                  <option>10-VIAJE</option>
+                  <option>11-VIAJE</option>
+                  <option>12-VIAJE</option>
+                  <option>13-VIAJE</option>
+                  <option>DEPOSITO</option>
+                </select>
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Vale</label>
