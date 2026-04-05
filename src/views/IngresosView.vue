@@ -193,27 +193,30 @@
               Solo aparecen los ítems con faltante. Marca el checkbox e ingresa la cantidad entregada en este viaje.
             </p>
 
-            <!-- Buscador por requerimiento -->
-            <div class="input-group input-group-sm mb-3" style="max-width:340px;">
-              <span class="input-group-text bg-white">
-                <i class="bi bi-search text-muted"></i>
+            <!-- Buscador -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="position-relative flex-grow-1" style="max-width:380px;">
+                <i class="bi bi-search position-absolute text-muted" style="left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;"></i>
+                <input
+                  type="text"
+                  class="form-control form-control-sm ps-4"
+                  v-model="buscarReq"
+                  placeholder="Filtrar por requerimiento o artículo..."
+                  autocomplete="off"
+                  style="border-radius:8px;"
+                />
+                <button
+                  v-if="buscarReq"
+                  class="btn btn-sm position-absolute p-0 border-0 text-muted"
+                  style="right:8px;top:50%;transform:translateY(-50%);background:none;"
+                  @click="buscarReq = ''"
+                >
+                  <i class="bi bi-x-circle-fill"></i>
+                </button>
+              </div>
+              <span v-if="itemsMarcados.length > 0" class="badge bg-success">
+                <i class="bi bi-check2 me-1"></i>{{ itemsMarcados.length }} seleccionado{{ itemsMarcados.length > 1 ? 's' : '' }}
               </span>
-              <input
-                type="text"
-                class="form-control"
-                v-model="buscarReq"
-                placeholder="Filtrar por código de requerimiento... ej: REQ-3"
-                autocomplete="off"
-              />
-              <button
-                v-if="buscarReq"
-                class="btn btn-outline-secondary"
-                type="button"
-                @click="buscarReq = ''"
-                title="Limpiar"
-              >
-                <i class="bi bi-x-lg"></i>
-              </button>
             </div>
 
             <div class="table-responsive mp-card p-0 overflow-hidden">
@@ -225,31 +228,75 @@
                     <th>Artículo</th>
                     <th>Proveedor</th>
                     <th class="text-end">Faltante</th>
-                    <th style="width:140px;">Cantidad Entregada</th>
+                    <th style="width:140px;">Cant. Entregada</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in pendientesFiltrados" :key="item.requerimiento_detalle_id"
-                      :class="{ 'table-primary bg-opacity-10': seleccionados[item.requerimiento_detalle_id] }">
+                  <!-- SECCIÓN: MARCADOS (siempre arriba) -->
+                  <template v-if="itemsMarcados.length > 0">
+                    <tr style="background:#f0fdf4;">
+                      <td colspan="6" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#16a34a;letter-spacing:0.04em;border-bottom:2px solid #bbf7d0;">
+                        <i class="bi bi-check2-circle me-1"></i>SELECCIONADOS PARA ESTE VIAJE
+                      </td>
+                    </tr>
+                    <tr
+                      v-for="item in itemsMarcados"
+                      :key="'sel-' + item.requerimiento_detalle_id"
+                      style="background:#f0fdf4;"
+                    >
+                      <td>
+                        <input type="checkbox" class="form-check-input"
+                          v-model="seleccionados[item.requerimiento_detalle_id]"
+                          @change="onCheck(item)" />
+                      </td>
+                      <td><span class="text-primary fw-medium" style="font-size:0.8rem;">{{ item.codigo_req }}</span></td>
+                      <td style="font-size:0.85rem;">{{ item.articulo }}</td>
+                      <td class="text-muted" style="font-size:0.85rem;">{{ item.proveedor }}</td>
+                      <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
+                      <td>
+                        <input type="number" class="form-control form-control-sm"
+                          v-model.number="cantidades[item.requerimiento_detalle_id]"
+                          :min="0.01" :max="item.faltante" step="0.01" />
+                      </td>
+                    </tr>
+                    <!-- Separador si hay resultados de búsqueda también -->
+                    <tr v-if="itemsFiltradosNoMarcados.length > 0" style="background:#f8fafc;">
+                      <td colspan="6" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.04em;border-bottom:1px solid #e2e8f0;">
+                        <i class="bi bi-list-ul me-1"></i>RESULTADOS DEL FILTRO
+                      </td>
+                    </tr>
+                  </template>
+
+                  <!-- SECCIÓN: FILTRADOS (no marcados) -->
+                  <tr v-if="!buscarReq && itemsMarcados.length === 0 && store.pendientes.length === 0">
+                    <td colspan="6" class="text-center py-5 text-success">
+                      <i class="bi bi-check-circle fs-4 d-block mb-2"></i>¡Todo entregado!
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="item in itemsFiltradosNoMarcados"
+                    :key="'filt-' + item.requerimiento_detalle_id"
+                  >
                     <td>
-                      <input type="checkbox"
-                             class="form-check-input"
-                             v-model="seleccionados[item.requerimiento_detalle_id]"
-                             @change="onCheck(item)" />
+                      <input type="checkbox" class="form-check-input"
+                        v-model="seleccionados[item.requerimiento_detalle_id]"
+                        @change="onCheck(item)" />
                     </td>
                     <td><span class="text-primary" style="font-size:0.8rem;">{{ item.codigo_req }}</span></td>
                     <td style="font-size:0.85rem;">{{ item.articulo }}</td>
                     <td class="text-muted" style="font-size:0.85rem;">{{ item.proveedor }}</td>
                     <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
                     <td>
-                      <input type="number"
-                             class="form-control form-control-sm"
-                             v-model.number="cantidades[item.requerimiento_detalle_id]"
-                             :min="0.01"
-                             :max="item.faltante"
-                             step="0.01"
-                             :disabled="!seleccionados[item.requerimiento_detalle_id]"
-                      />
+                      <input type="number" class="form-control form-control-sm"
+                        v-model.number="cantidades[item.requerimiento_detalle_id]"
+                        :min="0.01" :max="item.faltante" step="0.01"
+                        :disabled="!seleccionados[item.requerimiento_detalle_id]" />
+                    </td>
+                  </tr>
+                  <!-- Sin resultados del filtro -->
+                  <tr v-if="buscarReq && itemsFiltradosNoMarcados.length === 0 && itemsMarcados.length === 0">
+                    <td colspan="6" class="text-center py-4 text-muted" style="font-size:0.85rem;">
+                      <i class="bi bi-search d-block fs-4 mb-2"></i>Sin resultados para "{{ buscarReq }}"
                     </td>
                   </tr>
                 </tbody>
@@ -374,11 +421,20 @@ const ingresoSeleccionado = ref(null);
 
 // Buscador del modal de ingreso
 const buscarReq = ref('');
-const pendientesFiltrados = computed(() => {
+
+// Items ya marcados (siempre se muestran arriba, sin importar el filtro)
+const itemsMarcados = computed(() =>
+  store.pendientes.filter(item => seleccionados[item.requerimiento_detalle_id])
+);
+
+// Items que coinciden con búsqueda pero NO están marcados
+const itemsFiltradosNoMarcados = computed(() => {
   const q = buscarReq.value.trim().toLowerCase();
-  if (!q) return store.pendientes;
-  return store.pendientes.filter(item =>
-    item.codigo_req.toLowerCase().includes(q)
+  const noMarcados = store.pendientes.filter(item => !seleccionados[item.requerimiento_detalle_id]);
+  if (!q) return noMarcados;
+  return noMarcados.filter(item =>
+    item.codigo_req.toLowerCase().includes(q) ||
+    item.articulo.toLowerCase().includes(q)
   );
 });
 
