@@ -193,6 +193,29 @@
               Solo aparecen los ítems con faltante. Marca el checkbox e ingresa la cantidad entregada en este viaje.
             </p>
 
+            <!-- Buscador por requerimiento -->
+            <div class="input-group input-group-sm mb-3" style="max-width:340px;">
+              <span class="input-group-text bg-white">
+                <i class="bi bi-search text-muted"></i>
+              </span>
+              <input
+                type="text"
+                class="form-control"
+                v-model="buscarReq"
+                placeholder="Filtrar por código de requerimiento... ej: REQ-3"
+                autocomplete="off"
+              />
+              <button
+                v-if="buscarReq"
+                class="btn btn-outline-secondary"
+                type="button"
+                @click="buscarReq = ''"
+                title="Limpiar"
+              >
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+
             <div class="table-responsive mp-card p-0 overflow-hidden">
               <table class="table table-sm mb-0">
                 <thead>
@@ -206,7 +229,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in store.pendientes" :key="item.requerimiento_detalle_id"
+                  <tr v-for="item in pendientesFiltrados" :key="item.requerimiento_detalle_id"
                       :class="{ 'table-primary bg-opacity-10': seleccionados[item.requerimiento_detalle_id] }">
                     <td>
                       <input type="checkbox"
@@ -319,7 +342,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
 import { useIngresosStore } from '../stores/ingresos.store';
@@ -349,6 +372,16 @@ const form = ref({
 // Estado del modal de detalle
 const ingresoSeleccionado = ref(null);
 
+// Buscador del modal de ingreso
+const buscarReq = ref('');
+const pendientesFiltrados = computed(() => {
+  const q = buscarReq.value.trim().toLowerCase();
+  if (!q) return store.pendientes;
+  return store.pendientes.filter(item =>
+    item.codigo_req.toLowerCase().includes(q)
+  );
+});
+
 onMounted(async () => {
   await store.cargarPendientes();
   bsModal = new Modal(modalRef.value);
@@ -370,6 +403,7 @@ const abrirModalIngreso = () => {
   Object.keys(cantidades).forEach(k => delete cantidades[k]);
   mensajeError.value = '';
   mensajeExito.value = '';
+  buscarReq.value = '';
   bsModal.show();
 };
 
