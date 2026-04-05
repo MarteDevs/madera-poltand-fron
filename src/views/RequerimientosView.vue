@@ -90,24 +90,29 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Mina</label>
-                <select class="form-select" v-model="form.mina_id" required>
-                  <option value="" disabled>Selecciona una mina</option>
-                  <option v-for="m in catStore.minas" :key="m.id" :value="m.id">{{ m.nombre }}</option>
-                </select>
+                <SearchableSelect
+                  v-model="form.mina_id"
+                  :options="catStore.minas"
+                  placeholder="Selecciona una mina"
+                />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Proveedor</label>
-                <select class="form-select" v-model="form.proveedor_id" required>
-                  <option value="" disabled>Selecciona un proveedor</option>
-                  <option v-for="p in catStore.proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                </select>
+                <SearchableSelect
+                  v-model="form.proveedor_id"
+                  :options="catStore.proveedores"
+                  placeholder="Selecciona un proveedor"
+                />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Supervisor</label>
-                <select class="form-select" v-model="form.supervisor_id">
-                  <option value="">Sin asignar</option>
-                  <option v-for="s in catStore.supervisores" :key="s.id" :value="s.id">{{ s.nombre }}</option>
-                </select>
+                <SearchableSelect
+                  v-model="form.supervisor_id"
+                  :options="catStore.supervisores"
+                  placeholder="Sin asignar"
+                  :allow-empty="true"
+                  empty-label="Sin asignar"
+                />
               </div>
             </div>
 
@@ -137,11 +142,13 @@
                     </td>
                   </tr>
                   <tr v-for="(linea, i) in form.detalles" :key="i">
-                    <td>
-                      <select class="form-select form-select-sm" v-model="linea.articulo_id" @change="onArticuloChange(linea)">
-                        <option value="" disabled>Seleccionar</option>
-                        <option v-for="a in catStore.articulos" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                      </select>
+                    <td style="min-width:240px;">
+                      <SearchableSelect
+                        v-model="linea.articulo_id"
+                        :options="catStore.articulos"
+                        placeholder="Seleccionar artículo"
+                        @update:modelValue="onArticuloChange(linea)"
+                      />
                     </td>
                     <td>
                       <input type="number" class="form-control form-control-sm" v-model.number="linea.cantidad" min="1" />
@@ -262,6 +269,7 @@
 import { ref, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
+import SearchableSelect from '../components/SearchableSelect.vue';
 import { useRequerimientosStore } from '../stores/requerimientos.store';
 import { useCatalogosStore } from '../stores/catalogos.store';
 
