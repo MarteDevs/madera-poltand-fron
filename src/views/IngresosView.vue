@@ -172,35 +172,46 @@
             <div class="row g-3 mb-4">
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Fecha</label>
-                <input type="date" class="form-control" v-model="form.fecha" required />
+                <input
+                  ref="refFecha"
+                  type="date"
+                  class="form-control"
+                  v-model="form.fecha"
+                  required
+                  @keydown.enter.prevent="refViaje.focusOpen ? refViaje.focusOpen() : refViaje.focus()"
+                />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">N° Viaje</label>
-                <select class="form-select" v-model="form.viaje">
-                  <option value="">— Seleccionar —</option>
-                  <option>1-VIAJE</option>
-                  <option>2-VIAJE</option>
-                  <option>3-VIAJE</option>
-                  <option>4-VIAJE</option>
-                  <option>5-VIAJE</option>
-                  <option>6-VIAJE</option>
-                  <option>7-VIAJE</option>
-                  <option>8-VIAJE</option>
-                  <option>9-VIAJE</option>
-                  <option>10-VIAJE</option>
-                  <option>11-VIAJE</option>
-                  <option>12-VIAJE</option>
-                  <option>13-VIAJE</option>
-                  <option>DEPOSITO</option>
-                </select>
+                <SearchableSelect
+                  ref="refViaje"
+                  v-model="form.viaje"
+                  :options="opcionesViaje"
+                  placeholder="— Seleccionar —"
+                  @navigate="refVale.focus()"
+                />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Vale</label>
-                <input type="text" class="form-control" v-model="form.vale" placeholder="Ej: 2850" />
+                <input
+                  ref="refVale"
+                  type="text"
+                  class="form-control"
+                  v-model="form.vale"
+                  placeholder="Ej: 2850"
+                  @keydown.enter.prevent="refObservacion.focus()"
+                />
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Observación</label>
-                <input type="text" class="form-control" v-model="form.observacion" placeholder="Opcional" />
+                <input
+                  ref="refObservacion"
+                  type="text"
+                  class="form-control"
+                  v-model="form.observacion"
+                  placeholder="Opcional"
+                  @keydown.enter.prevent="refBuscador.focus()"
+                />
               </div>
             </div>
 
@@ -214,6 +225,7 @@
               <div class="position-relative flex-grow-1" style="max-width:380px;">
                 <i class="bi bi-search position-absolute text-muted" style="left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;"></i>
                 <input
+                  ref="refBuscador"
                   type="text"
                   class="form-control form-control-sm ps-4"
                   v-model="buscarReq"
@@ -405,9 +417,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
+import SearchableSelect from '../components/SearchableSelect.vue';
 import { useIngresosStore } from '../stores/ingresos.store';
 
 const store = useIngresosStore();
@@ -415,6 +428,19 @@ const modalRef = ref(null);
 const modalDetalleRef = ref(null);
 let bsModal = null;
 let bsModalDetalle = null;
+
+// Refs de navegación por Enter en el modal de registro
+const refFecha = ref(null);
+const refViaje = ref(null);
+const refVale = ref(null);
+const refObservacion = ref(null);
+const refBuscador = ref(null);
+
+// Opciones de viaje para el SearchableSelect
+const opcionesViaje = [
+  ...Array.from({ length: 13 }, (_, i) => ({ id: `${i + 1}-VIAJE`, nombre: `${i + 1}-VIAJE` })),
+  { id: 'DEPOSITO', nombre: 'DEPOSITO' }
+];
 
 // Estado de tabs
 const tabActiva = ref('pendientes');
@@ -477,6 +503,10 @@ const abrirModalIngreso = () => {
   mensajeExito.value = '';
   buscarReq.value = '';
   bsModal.show();
+  // Enfocar el primer campo al abrir el modal
+  nextTick(() => {
+    setTimeout(() => refFecha.value?.focus(), 300);
+  });
 };
 
 const onCheck = (item) => {
