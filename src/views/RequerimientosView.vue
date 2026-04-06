@@ -1,6 +1,12 @@
 <template>
   <PageLayout title="Requerimientos">
     <template #actions>
+      <button class="btn btn-outline-info btn-sm me-2" @click="exportarExcelDetallado" :disabled="store.historial.length === 0" title="Exportar con todos los ítems">
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel Detallado
+      </button>
+      <button class="btn btn-outline-success btn-sm me-2" @click="exportarExcel" :disabled="store.historial.length === 0" title="Exportar resumen general">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel General
+      </button>
       <button class="btn btn-primary btn-sm" @click="abrirModalCrear">
         <i class="bi bi-plus-lg me-1"></i> Nuevo Requerimiento
       </button>
@@ -300,6 +306,8 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
 import { useRequerimientosStore } from '../stores/requerimientos.store';
@@ -351,6 +359,126 @@ const abrirModalCrear = () => {
   mensajeError.value = '';
   mensajeExito.value = '';
   bsModalCrear.show();
+};
+
+const exportarExcel = async () => {
+  if (store.historial.length === 0) return;
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Requerimientos');
+
+  const headers = ['Código', 'Fecha', 'Mina', 'Supervisor', 'Estado', 'Total Proveedor', 'Total Mina'];
+  const headerRow = worksheet.addRow(headers);
+  
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F497D' }
+    };
+    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+  });
+
+  worksheet.getColumn(1).width = 15;
+  worksheet.getColumn(2).width = 15;
+  worksheet.getColumn(3).width = 20;
+  worksheet.getColumn(4).width = 25;
+  worksheet.getColumn(5).width = 15;
+  worksheet.getColumn(6).width = 18;
+  worksheet.getColumn(7).width = 18;
+
+  store.historial.forEach(r => {
+    const row = worksheet.addRow([
+      r.codigo_req,
+      r.fecha,
+      r.mina,
+      r.supervisor || 'Sin asignar',
+      r.estado,
+      Number(r.total_proveedor),
+      Number(r.total_mina)
+    ]);
+    
+    row.getCell(6).numFmt = '"S/" #,##0.00';
+    row.getCell(6).font = { color: { argb: 'FF2563EB' }, bold: true };
+    row.getCell(7).numFmt = '"S/" #,##0.00';
+    row.getCell(7).font = { color: { argb: 'FF16A34A' }, bold: true };
+    
+    row.eachCell((cell) => {
+      cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+      cell.alignment = { vertical: 'middle' };
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(data, `Requerimientos_${new Date().toISOString().split('T')[0]}.xlsx`);
+};
+
+const exportarExcelDetallado = async () => {
+  if (store.historial.length === 0) return;
+  
+  const detalles = await store.getHistorialDetallado();
+  if (!detalles || detalles.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Req. Detalle');
+
+  const headers = [
+    'Código', 'Fecha', 'Mina', 'Supervisor', 'Estado', 
+    'Artículo', 'Proveedor', 'Pedido', 'Entregado', 'Faltante', 
+    'P. Prov', 'P. Mina', 'T. Prov. Línea', 'T. Mina Línea'
+  ];
+  const headerRow = worksheet.addRow(headers);
+  
+  headerRow.eachCell((cell) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D9488' } }; 
+    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+  });
+
+  worksheet.getColumn(1).width = 15;
+  worksheet.getColumn(2).width = 15;
+  worksheet.getColumn(3).width = 20;
+  worksheet.getColumn(4).width = 25;
+  worksheet.getColumn(5).width = 15;
+  worksheet.getColumn(6).width = 25;
+  worksheet.getColumn(7).width = 20;
+  worksheet.getColumn(8).width = 12;
+  worksheet.getColumn(9).width = 12;
+  worksheet.getColumn(10).width = 12;
+  worksheet.getColumn(11).width = 15;
+  worksheet.getColumn(12).width = 15;
+  worksheet.getColumn(13).width = 18;
+  worksheet.getColumn(14).width = 18;
+
+  detalles.forEach(r => {
+    const row = worksheet.addRow([
+      r.codigo_req, r.fecha, r.mina, r.supervisor, r.estado,
+      r.articulo, r.proveedor, 
+      Number(r.pedido), Number(r.entregado), Number(r.faltante),
+      Number(r.precio_proveedor), Number(r.precio_mina),
+      Number(r.total_proveedor_linea), Number(r.total_mina_linea)
+    ]);
+    
+    [11, 12, 13, 14].forEach(col => {
+      row.getCell(col).numFmt = '"S/" #,##0.00';
+    });
+    
+    row.getCell(10).font = { color: { argb: r.faltante > 0 ? 'FFDC2626' : (r.faltante < 0 ? 'FF2563EB' : 'FF16A34A') }, bold: true };
+    row.getCell(13).font = { color: { argb: 'FF2563EB' }, bold: true };
+    row.getCell(14).font = { color: { argb: 'FF16A34A' }, bold: true };
+    
+    row.eachCell((cell) => {
+      cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+      cell.alignment = { vertical: 'middle' };
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(data, `Req_Detallados_${new Date().toISOString().split('T')[0]}.xlsx`);
 };
 
 const agregarLinea = () => {

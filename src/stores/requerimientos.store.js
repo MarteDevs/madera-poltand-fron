@@ -36,6 +36,14 @@ export const useRequerimientosStore = defineStore('requerimientos', {
             } catch {
                 return [];
             }
+        },
+        async getHistorialDetallado() {
+            try {
+                const res = await api.get('/requerimientos/historial/detallado');
+                return res.data;
+            } catch {
+                return [];
+            }
         }
     }
 });
