@@ -142,8 +142,8 @@
                   <tr>
                     <th>Artículo</th>
                     <th style="width:110px;">Cantidad</th>
-                    <th style="width:120px;">P. Proveedor</th>
-                    <th style="width:120px;">P. Mina</th>
+                    <th style="width:120px; color:#2563eb;">P. Proveedor</th>
+                    <th style="width:120px; color:#16a34a;">P. Mina</th>
                     <th style="width:50px;"></th>
                   </tr>
                 </thead>
@@ -175,6 +175,7 @@
                       <input type="number" class="form-control form-control-sm"
                         :ref="el => { if(el) precioProvRefs[i] = el }"
                         v-model.number="linea.precio_proveedor" min="0" step="0.01"
+                        style="color:#2563eb; font-weight:600;"
                         @keydown.enter.prevent="() => nextTick(() => precioMinaRefs[i]?.focus())"
                       />
                     </td>
@@ -182,6 +183,7 @@
                       <input type="number" class="form-control form-control-sm"
                         :ref="el => { if(el) precioMinaRefs[i] = el }"
                         v-model.number="linea.precio_mina" min="0" step="0.01"
+                        style="color:#16a34a; font-weight:600;"
                         @keydown.enter.prevent="agregarYFocus"
                       />
                     </td>
@@ -350,7 +352,7 @@ const abrirModalCrear = () => {
 const agregarLinea = () => {
   form.value.detalles.push({
     articulo_id: '',
-    cantidad: 1, precio_proveedor: 0, precio_mina: 0
+    cantidad: '', precio_proveedor: 0, precio_mina: 0
   });
 };
 
