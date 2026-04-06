@@ -511,7 +511,7 @@ const abrirModalIngreso = () => {
 
 const onCheck = (item) => {
   if (seleccionados[item.requerimiento_detalle_id]) {
-    cantidades[item.requerimiento_detalle_id] = item.faltante;
+    cantidades[item.requerimiento_detalle_id] = '';
   } else {
     delete cantidades[item.requerimiento_detalle_id];
   }
