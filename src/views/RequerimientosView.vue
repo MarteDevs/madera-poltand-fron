@@ -255,8 +255,12 @@
                     <td>{{ d.proveedor }}</td>
                     <td class="text-end fw-medium">{{ d.pedido }}</td>
                     <td class="text-end text-success">{{ d.entregado }}</td>
-                    <td class="text-end" :class="d.faltante > 0 ? 'text-danger fw-medium' : 'text-success'">
-                      {{ d.faltante }}
+                    <td class="text-end">
+                      <span v-if="Number(d.faltante) > 0" class="text-danger fw-medium">{{ d.faltante }}</span>
+                      <span v-else-if="Number(d.faltante) < 0" class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1">
+                        +{{ Math.abs(Number(d.faltante)).toFixed(2) }} (Exceso)
+                      </span>
+                      <span v-else class="text-success fw-medium"><i class="bi bi-check2 me-1"></i>0.00</span>
                     </td>
                     <td class="text-end" style="color:#2563eb;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
                     <td class="text-end fw-semibold" style="color:#2563eb;">
