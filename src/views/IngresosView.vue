@@ -44,11 +44,14 @@
       </div>
 
       <div class="mp-card p-0 overflow-hidden">
-        <div class="px-4 py-3 border-bottom">
+        <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
           <h6 class="mb-0 fw-semibold">
             Items Pendientes de Entrega
             <span class="badge bg-warning text-dark ms-2">{{ store.pendientes.length }}</span>
           </h6>
+          <button class="btn btn-sm btn-outline-success border-success text-success" @click="exportarPendientesExcel" :disabled="store.pendientes.length === 0 || store.cargando">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar Excel
+          </button>
         </div>
         <div class="table-responsive">
           <table class="table mb-0">
@@ -446,6 +449,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { Modal } from 'bootstrap';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
 import { useIngresosStore } from '../stores/ingresos.store';
@@ -512,6 +517,46 @@ onMounted(async () => {
   bsModal = new Modal(modalRef.value);
   bsModalDetalle = new Modal(modalDetalleRef.value);
 });
+
+// ── Exportar Excel ──
+const exportarPendientesExcel = async () => {
+  if (store.pendientes.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Pendientes Entrega');
+
+  worksheet.columns = [
+    { header: 'Código Req.', key: 'codigo', width: 18 },
+    { header: 'Mina', key: 'mina', width: 25 },
+    { header: 'Artículo', key: 'articulo', width: 45 },
+    { header: 'Proveedor', key: 'proveedor', width: 30 },
+    { header: 'Pedido', key: 'pedido', width: 15 },
+    { header: 'Entregado', key: 'entregado', width: 15 },
+    { header: 'Faltante', key: 'faltante', width: 15 }
+  ];
+
+  // Estilo a la cabecera
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D6EFD' } };
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+  store.pendientes.forEach(item => {
+    worksheet.addRow({
+      codigo: item.codigo_req,
+      mina: item.mina,
+      articulo: item.articulo,
+      proveedor: item.proveedor,
+      pedido: Number(item.pedido),
+      entregado: Number(item.entregado),
+      faltante: Number(item.faltante)
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `Pendientes_Entrega_${new Date().toISOString().split('T')[0]}.xlsx`);
+};
 
 // ── Tab historial ──
 const cambiarAHistorial = async () => {
