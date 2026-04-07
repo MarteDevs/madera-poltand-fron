@@ -55,6 +55,7 @@
             <thead>
               <tr>
                 <th>Código Req.</th>
+                <th>Mina</th>
                 <th>Artículo</th>
                 <th>Proveedor</th>
                 <th class="text-end">Pedido</th>
@@ -64,17 +65,18 @@
             </thead>
             <tbody>
               <tr v-if="store.cargando">
-                <td colspan="6" class="text-center py-5 text-muted">
+                <td colspan="7" class="text-center py-5 text-muted">
                   <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
                 </td>
               </tr>
               <tr v-else-if="store.pendientes.length === 0">
-                <td colspan="6" class="text-center py-5 text-success">
+                <td colspan="7" class="text-center py-5 text-success">
                   <i class="bi bi-check-circle fs-4 d-block mb-2"></i>¡Todo entregado! No hay faltantes.
                 </td>
               </tr>
               <tr v-for="item in store.pendientes" :key="item.requerimiento_detalle_id">
                 <td><span class="fw-medium text-primary">{{ item.codigo_req }}</span></td>
+                <td><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
                 <td>{{ item.articulo }}</td>
                 <td><span class="text-muted">{{ item.proveedor }}</span></td>
                 <td class="text-end fw-medium">{{ item.pedido }}</td>
@@ -253,8 +255,10 @@
                   <tr>
                     <th style="width:40px;"></th>
                     <th>Req.</th>
+                    <th>Mina</th>
                     <th>Artículo</th>
                     <th>Proveedor</th>
+                    <th class="text-end">Pedido</th>
                     <th class="text-end">Faltante</th>
                     <th style="width:140px;">Cant. Entregada</th>
                   </tr>
@@ -263,7 +267,7 @@
                   <!-- SECCIÓN: MARCADOS (siempre arriba) -->
                   <template v-if="itemsMarcados.length > 0">
                     <tr style="background:#f0fdf4;">
-                      <td colspan="6" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#16a34a;letter-spacing:0.04em;border-bottom:2px solid #bbf7d0;">
+                      <td colspan="8" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#16a34a;letter-spacing:0.04em;border-bottom:2px solid #bbf7d0;">
                         <i class="bi bi-check2-circle me-1"></i>SELECCIONADOS PARA ESTE VIAJE
                       </td>
                     </tr>
@@ -278,8 +282,10 @@
                           @change="onCheck(item)" />
                       </td>
                       <td><span class="text-primary fw-medium" style="font-size:0.8rem;">{{ item.codigo_req }}</span></td>
+                      <td style="font-size:0.85rem;"><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
                       <td style="font-size:0.85rem;">{{ item.articulo }}</td>
                       <td class="text-muted" style="font-size:0.85rem;">{{ item.proveedor }}</td>
+                      <td class="text-end fw-medium" style="font-size:0.85rem;">{{ item.pedido }}</td>
                       <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
                       <td>
                         <input type="number" class="form-control form-control-sm"
@@ -289,7 +295,7 @@
                     </tr>
                     <!-- Separador si hay resultados de búsqueda también -->
                     <tr v-if="itemsFiltradosNoMarcados.length > 0" style="background:#f8fafc;">
-                      <td colspan="6" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.04em;border-bottom:1px solid #e2e8f0;">
+                      <td colspan="8" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.04em;border-bottom:1px solid #e2e8f0;">
                         <i class="bi bi-list-ul me-1"></i>RESULTADOS DEL FILTRO
                       </td>
                     </tr>
@@ -297,7 +303,7 @@
 
                   <!-- SECCIÓN: FILTRADOS (no marcados) -->
                   <tr v-if="!buscarReq && itemsMarcados.length === 0 && store.pendientes.length === 0">
-                    <td colspan="6" class="text-center py-5 text-success">
+                    <td colspan="8" class="text-center py-5 text-success">
                       <i class="bi bi-check-circle fs-4 d-block mb-2"></i>¡Todo entregado!
                     </td>
                   </tr>
@@ -311,8 +317,10 @@
                         @change="onCheck(item)" />
                     </td>
                     <td><span class="text-primary" style="font-size:0.8rem;">{{ item.codigo_req }}</span></td>
+                    <td style="font-size:0.85rem;"><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
                     <td style="font-size:0.85rem;">{{ item.articulo }}</td>
                     <td class="text-muted" style="font-size:0.85rem;">{{ item.proveedor }}</td>
+                    <td class="text-end fw-medium" style="font-size:0.85rem;">{{ item.pedido }}</td>
                     <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
                     <td>
                       <input type="number" class="form-control form-control-sm"
@@ -323,7 +331,7 @@
                   </tr>
                   <!-- Sin resultados del filtro -->
                   <tr v-if="buscarReq && itemsFiltradosNoMarcados.length === 0 && itemsMarcados.length === 0">
-                    <td colspan="6" class="text-center py-4 text-muted" style="font-size:0.85rem;">
+                    <td colspan="8" class="text-center py-4 text-muted" style="font-size:0.85rem;">
                       <i class="bi bi-search d-block fs-4 mb-2"></i>Sin resultados para "{{ buscarReq }}"
                     </td>
                   </tr>
