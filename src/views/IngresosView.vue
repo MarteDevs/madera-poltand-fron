@@ -384,23 +384,42 @@
                     <th>Req.</th>
                     <th>Artículo</th>
                     <th>Proveedor</th>
-                    <th class="text-end">Cant. Entregada</th>
+                    <th class="text-end" style="color:#2563eb;">P. Prov</th>
+                    <th class="text-end" style="color:#16a34a;">P. Mina</th>
+                    <th class="text-end">Pedido</th>
+                    <th class="text-end" title="Entregado en este viaje específico">En Este Viaje</th>
+                    <th class="text-end" title="Lo que falta o sobra entregar en total">Faltante</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="d in store.detalleActual" :key="d.id">
+                  <tr v-for="d in store.detalleActual" :key="d.id" class="align-middle">
                     <td><span class="text-primary fw-medium" style="font-size:0.82rem;">{{ d.codigo_req }}</span></td>
                     <td style="font-size:0.85rem;">{{ d.articulo }}</td>
                     <td class="text-muted" style="font-size:0.85rem;">{{ d.proveedor }}</td>
-                    <td class="text-end fw-semibold text-success">{{ Number(d.cantidad_entregada).toFixed(2) }}</td>
+                    <td class="text-end" style="color:#2563eb;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
+                    <td class="text-end" style="color:#16a34a;">{{ Number(d.precio_mina).toFixed(2) }}</td>
+                    <td class="text-end fw-medium">{{ d.pedido }}</td>
+                    <td class="text-end fw-bold text-success">{{ Number(d.cantidad_entregada).toFixed(2) }}</td>
+                    <td class="text-end fw-semibold">
+                      <span v-if="(d.pedido - d.entregado_total) === 0" class="text-success fw-bold">
+                        <i class="bi bi-check-lg"></i> 0.00
+                      </span>
+                      <span v-else-if="(d.pedido - d.entregado_total) < 0" class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
+                        +{{ Math.abs(d.pedido - d.entregado_total).toFixed(2) }} (Exceso)
+                      </span>
+                      <span v-else class="text-danger fw-bold">
+                        {{ (d.pedido - d.entregado_total).toFixed(2) }}
+                      </span>
+                    </td>
                   </tr>
                 </tbody>
                 <tfoot class="table-light">
                   <tr>
-                    <td colspan="3" class="text-end fw-semibold" style="font-size:0.85rem;">Total entregado:</td>
+                    <td colspan="6" class="text-end fw-semibold" style="font-size:0.85rem;">Total items en este viaje:</td>
                     <td class="text-end fw-bold text-success">
                       {{ store.detalleActual.reduce((s, d) => s + Number(d.cantidad_entregada), 0).toFixed(2) }}
                     </td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
