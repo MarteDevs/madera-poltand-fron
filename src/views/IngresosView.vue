@@ -102,11 +102,16 @@
       <div class="mp-card p-0 overflow-hidden">
         <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
           <h6 class="mb-0 fw-semibold">Ingresos Registrados</h6>
-          <button class="btn btn-sm btn-outline-secondary" @click="store.cargarHistorial()" :disabled="store.cargandoHistorial">
-            <span v-if="store.cargandoHistorial" class="spinner-border spinner-border-sm me-1"></span>
-            <i v-else class="bi bi-arrow-clockwise me-1"></i>
-            Actualizar
-          </button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-success border-success text-success" @click="exportarHistorialExcel" :disabled="store.historial.length === 0 || store.cargandoHistorial">
+              <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar Excel
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" @click="store.cargarHistorial()" :disabled="store.cargandoHistorial">
+              <span v-if="store.cargandoHistorial" class="spinner-border spinner-border-sm me-1"></span>
+              <i v-else class="bi bi-arrow-clockwise me-1"></i>
+              Actualizar
+            </button>
+          </div>
         </div>
         <div class="table-responsive">
           <table class="table mb-0">
@@ -556,6 +561,64 @@ const exportarPendientesExcel = async () => {
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, `Pendientes_Entrega_${new Date().toISOString().split('T')[0]}.xlsx`);
+};
+
+const exportarHistorialExcel = async () => {
+  if (store.historial.length === 0) return;
+
+  const response = await store.exportarHistorialDetallado();
+  if (!response.success || !response.data || response.data.length === 0) {
+      alert("No hay datos para exportar o ocurrió un error");
+      return;
+  }
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Historial Detallado');
+
+  worksheet.columns = [
+    { header: 'Cód. Ingreso', key: 'codigo_ingreso', width: 22 },
+    { header: 'Fecha', key: 'fecha_ingreso', width: 14 },
+    { header: 'Viaje', key: 'viaje', width: 15 },
+    { header: 'Vale', key: 'vale', width: 15 },
+    { header: 'Observación', key: 'observacion', width: 25 },
+    { header: 'Req.', key: 'codigo_req', width: 15 },
+    { header: 'Mina', key: 'mina', width: 20 },
+    { header: 'Artículo', key: 'articulo', width: 40 },
+    { header: 'Proveedor', key: 'proveedor', width: 25 },
+    { header: 'P. Prov', key: 'precio_proveedor', width: 12 },
+    { header: 'P. Mina', key: 'precio_mina', width: 12 },
+    { header: 'Pedido', key: 'pedido', width: 12 },
+    { header: 'En Viaje', key: 'cantidad_entregada', width: 12 },
+    { header: 'Faltante Act.', key: 'faltante', width: 14 }
+  ];
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF198754' } }; // Verde para historial
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+  response.data.forEach(item => {
+    worksheet.addRow({
+      codigo_ingreso: item.codigo_ingreso,
+      fecha_ingreso: item.fecha_ingreso,
+      viaje: item.viaje || '',
+      vale: item.vale || '',
+      observacion: item.observacion || '',
+      codigo_req: item.codigo_req,
+      mina: item.mina || '',
+      articulo: item.articulo,
+      proveedor: item.proveedor,
+      precio_proveedor: Number(item.precio_proveedor || 0),
+      precio_mina: Number(item.precio_mina || 0),
+      pedido: Number(item.pedido || 0),
+      cantidad_entregada: Number(item.cantidad_entregada || 0),
+      faltante: Number(item.faltante || 0)
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `Historial_Ingresos_Detallado_${new Date().toISOString().split('T')[0]}.xlsx`);
 };
 
 // ── Tab historial ──

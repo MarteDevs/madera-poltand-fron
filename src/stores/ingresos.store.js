@@ -57,6 +57,15 @@ export const useIngresosStore = defineStore('ingresos', {
             } catch (err) {
                 return { success: false, mensaje: err.response?.data?.mensaje || 'Error al registrar' };
             }
+        },
+        async exportarHistorialDetallado() {
+            try {
+                const res = await api.get('/ingresos/exportar/detallado');
+                return { success: true, data: res.data };
+            } catch (err) {
+                console.error('Error exportando historial:', err);
+                return { success: false, mensaje: 'Error al exportar detalle' };
+            }
         }
     }
 });
