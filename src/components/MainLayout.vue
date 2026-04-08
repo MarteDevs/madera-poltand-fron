@@ -45,6 +45,13 @@
       <RouterLink to="/supervisores" class="nav-link" active-class="active">
         <i class="bi bi-person-badge"></i> Supervisores
       </RouterLink>
+
+      <template v-if="authStore.usuario?.rol_id === 1 || authStore.usuario?.rol_id === 2">
+        <div class="nav-section">Seguridad</div>
+        <RouterLink to="/usuarios" class="nav-link" active-class="active">
+          <i class="bi bi-people-fill"></i> Usuarios
+        </RouterLink>
+      </template>
     </nav>
 
     <!-- Footer usuario -->
