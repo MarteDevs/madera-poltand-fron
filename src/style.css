@@ -180,6 +180,15 @@ body {
   font-size: 0.75rem;
 }
 
+.badge-parcial {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+}
+
 .badge-cancelado {
   background-color: #fee2e2;
   color: #7f1d1d;

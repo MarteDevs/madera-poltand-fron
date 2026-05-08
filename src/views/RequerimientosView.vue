@@ -48,8 +48,8 @@
             <tr v-if="store.cargando">
               <td colspan="8" class="text-center py-5 text-muted">
                 <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
-</td>
-          </tr>
+              </td>
+            </tr>
             <tr v-else-if="historialPaginado.length === 0">
               <td colspan="8" class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-4 d-block mb-2"></i>Sin requerimientos
@@ -68,9 +68,22 @@
                 S/ {{ Number(r.total_mina).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
               </td>
               <td class="text-center">
-                <button class="btn btn-sm btn-outline-secondary" @click="verDetalles(r)" title="Ver detalles">
-                  <i class="bi bi-eye"></i>
-                </button>
+                <div class="d-flex justify-content-center gap-1">
+                  <button class="btn btn-sm btn-outline-info" @click="verDetalles(r)" title="Ver detalles">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-primary" @click="prepararEdicion(r)" title="Editar requerimiento">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button 
+                    v-if="r.estado === 'PENDIENTE'" 
+                    class="btn btn-sm btn-outline-danger" 
+                    @click="confirmarEliminar(r)" 
+                    title="Eliminar requerimiento"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -119,12 +132,14 @@
       </div>
     </div>
 
-    <!-- ====== MODAL CREAR ====== -->
+    <!-- ====== MODAL CREAR / EDITAR ====== -->
     <div class="modal fade" id="modalCrear" tabindex="-1" ref="modalCrearRef">
       <div class="modal-dialog modal-xl" style="max-width:1300px;">
         <div class="modal-content" style="height:88vh; display:flex; flex-direction:column;">
           <div class="modal-header">
-            <h5 class="modal-title fw-semibold">Nuevo Requerimiento</h5>
+            <h5 class="modal-title fw-semibold">
+              {{ modoEdicion ? `Editando Requerimiento ${form.codigo_req}` : 'Nuevo Requerimiento' }}
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body" style="overflow-y:auto; flex:1; display:flex; flex-direction:column;">
@@ -234,7 +249,12 @@
                       />
                     </td>
                     <td>
-                      <button class="btn btn-sm btn-outline-danger" @click="quitarLinea(i)">
+                      <button 
+                        class="btn btn-sm btn-outline-danger" 
+                        @click="quitarLinea(i)"
+                        :disabled="linea.entregado > 0"
+                        :title="linea.entregado > 0 ? 'No se puede quitar porque ya tiene entregas' : 'Quitar línea'"
+                      >
                         <i class="bi bi-trash"></i>
                       </button>
                     </td>
@@ -246,15 +266,12 @@
             <div v-if="mensajeError" class="alert alert-danger py-2" style="font-size:0.85rem;">
               <i class="bi bi-exclamation-circle me-2"></i>{{ mensajeError }}
             </div>
-            <div v-if="mensajeExito" class="alert alert-success py-2" style="font-size:0.85rem;">
-              <i class="bi bi-check-circle me-2"></i>{{ mensajeExito }}
-            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button class="btn btn-primary" @click="guardar" :disabled="guardando">
               <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
-              {{ guardando ? 'Guardando...' : 'Crear Requerimiento' }}
+              {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar Requerimiento' : 'Crear Requerimiento') }}
             </button>
           </div>
         </div>
@@ -370,6 +387,10 @@ const reqSeleccionado = ref(null);
 const detallesActuales = ref([]);
 const cargandoDetalles = ref(false);
 
+// ---- Estado de Edición ----
+const modoEdicion = ref(false);
+const idRequerimientoEditar = ref(null);
+
 // ---- Paginación ----
 const paginaActual = ref(1);
 const porPagina = ref(25);
@@ -407,6 +428,7 @@ const precioProvRefs = [];
 const precioMinaRefs = [];
 
 const formVacio = () => ({
+  codigo_req: '',
   fecha: new Date().toISOString().split('T')[0],
   mina_id: '',
   proveedor_id: '',
@@ -422,10 +444,56 @@ onMounted(async () => {
 });
 
 const abrirModalCrear = () => {
+  modoEdicion.value = false;
+  idRequerimientoEditar.value = null;
   form.value = formVacio();
   mensajeError.value = '';
   mensajeExito.value = '';
   bsModalCrear.show();
+};
+
+const prepararEdicion = async (r) => {
+  modoEdicion.value = true;
+  idRequerimientoEditar.value = r.id;
+  mensajeError.value = '';
+  mensajeExito.value = '';
+
+  // Buscamos los datos actuales para llenar el form
+  const rawDetalles = await store.getDetalles(r.id);
+  
+  // Encontramos el proveedor_id de la cabecera
+  const minaObj = catStore.minas.find(m => m.nombre === r.mina);
+  
+  // Cargamos el form
+  form.value = {
+    codigo_req: r.codigo_req,
+    fecha: r.fecha, 
+    mina_id: minaObj?.id || '',
+    proveedor_id: rawDetalles[0]?.proveedor_id || '',
+    supervisor_id: catStore.supervisores.find(s => s.nombre === r.supervisor)?.id || '',
+    detalles: rawDetalles.map(d => ({
+      id: d.id,
+      articulo_id: d.articulo_id,
+      proveedor_id: d.proveedor_id,
+      cantidad: Number(d.pedido),
+      precio_proveedor: Number(d.precio_proveedor),
+      precio_mina: Number(d.precio_mina),
+      entregado: Number(d.entregado)
+    }))
+  };
+
+  bsModalCrear.show();
+};
+
+const confirmarEliminar = async (r) => {
+  if (confirm(`¿Estás seguro de eliminar el requerimiento ${r.codigo_req}?`)) {
+    const res = await store.eliminarRequerimiento(r.id);
+    if (res.success) {
+      toastStore.addToast(`Requerimiento ${r.codigo_req} eliminado`, 'success');
+    } else {
+      toastStore.addToast(res.mensaje, 'danger');
+    }
+  }
 };
 
 const exportarExcel = async () => {
@@ -551,7 +619,7 @@ const exportarExcelDetallado = async () => {
 const agregarLinea = () => {
   form.value.detalles.push({
     articulo_id: '',
-    cantidad: '', precio_proveedor: 0, precio_mina: 0
+    cantidad: '', precio_proveedor: 0, precio_mina: 0, entregado: 0
   });
 };
 
@@ -599,15 +667,28 @@ const guardar = async () => {
     ...d,
     proveedor_id: form.value.proveedor_id
   }));
-  const result = await store.crearRequerimiento({
-    fecha: form.value.fecha,
-    mina_id: form.value.mina_id,
-    supervisor_id: form.value.supervisor_id || null,
-    detalles: detallesConProveedor
-  });
+
+  let result;
+  if (modoEdicion.value) {
+    result = await store.actualizarRequerimiento(idRequerimientoEditar.value, {
+      fecha: form.value.fecha,
+      mina_id: form.value.mina_id,
+      supervisor_id: form.value.supervisor_id || null,
+      detalles: detallesConProveedor
+    });
+  } else {
+    result = await store.crearRequerimiento({
+      fecha: form.value.fecha,
+      mina_id: form.value.mina_id,
+      supervisor_id: form.value.supervisor_id || null,
+      detalles: detallesConProveedor
+    });
+  }
+
   guardando.value = false;
   if (result.success) {
-    toastStore.addToast(`Requerimiento ${result.codigo} creado exitosamente.`, 'success');
+    const msg = modoEdicion.value ? 'Requerimiento actualizado' : `Requerimiento ${result.codigo} creado`;
+    toastStore.addToast(`${msg} exitosamente.`, 'success');
     setTimeout(() => bsModalCrear.hide(), 1000);
   } else {
     mensajeError.value = result.mensaje;
@@ -625,7 +706,7 @@ const verDetalles = async (r) => {
 };
 
 const badgeClass = (estado) => {
-  const map = { PENDIENTE: 'badge-pendiente', COMPLETADO: 'badge-completado', CANCELADO: 'badge-cancelado' };
+  const map = { PENDIENTE: 'badge-pendiente', COMPLETADO: 'badge-completado', CANCELADO: 'badge-cancelado', PARCIAL: 'badge-parcial' };
   return map[estado] || 'badge-pendiente';
 };
 </script>

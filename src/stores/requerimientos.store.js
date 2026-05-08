@@ -44,6 +44,24 @@ export const useRequerimientosStore = defineStore('requerimientos', {
             } catch {
                 return [];
             }
+        },
+        async actualizarRequerimiento(id, payload) {
+            try {
+                await api.put(`/requerimientos/${id}`, payload);
+                await this.cargarHistorial();
+                return { success: true };
+            } catch (err) {
+                return { success: false, mensaje: err.response?.data?.mensaje || 'Error al actualizar' };
+            }
+        },
+        async eliminarRequerimiento(id) {
+            try {
+                await api.delete(`/requerimientos/${id}`);
+                await this.cargarHistorial();
+                return { success: true };
+            } catch (err) {
+                return { success: false, mensaje: err.response?.data?.mensaje || 'Error al eliminar' };
+            }
         }
     }
 });
