@@ -14,9 +14,20 @@
 
     <!-- Tabla historial -->
     <div class="mp-card p-0 overflow-hidden">
-      <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+      <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
         <h6 class="mb-0 fw-semibold">Historial de Requerimientos</h6>
-        <span class="text-muted" style="font-size:0.8rem;">{{ store.historial.length }} registros</span>
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center gap-2" style="font-size:0.8rem;">
+            <span class="text-muted">Mostrar</span>
+            <select v-model="porPagina" class="form-select form-select-sm" style="width:70px;">
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </div>
+          <span class="text-muted" style="font-size:0.8rem;">{{ store.historial.length }} registros</span>
+        </div>
       </div>
 
       <div class="table-responsive">
@@ -37,14 +48,14 @@
             <tr v-if="store.cargando">
               <td colspan="8" class="text-center py-5 text-muted">
                 <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
-              </td>
-            </tr>
-            <tr v-else-if="store.historial.length === 0">
+</td>
+          </tr>
+            <tr v-else-if="historialPaginado.length === 0">
               <td colspan="8" class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-4 d-block mb-2"></i>Sin requerimientos
               </td>
             </tr>
-            <tr v-for="r in store.historial" :key="r.id">
+            <tr v-for="r in historialPaginado" :key="r.id">
               <td><span class="fw-medium text-primary">{{ r.codigo_req }}</span></td>
               <td>{{ r.fecha }}</td>
               <td>{{ r.mina }}</td>
@@ -76,6 +87,35 @@
             </tr>
           </tfoot>
         </table>
+      </div>
+
+      <!-- Paginación -->
+      <div v-if="totalPaginas > 1" class="px-4 py-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-3 bg-light bg-opacity-50">
+        <div class="text-muted" style="font-size:0.8rem;">
+          Mostrando {{ (paginaActual - 1) * porPagina + 1 }} - {{ Math.min(paginaActual * porPagina, store.historial.length) }} de {{ store.historial.length }}
+        </div>
+        <nav aria-label="Paginación de requerimientos">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" :class="{ disabled: paginaActual === 1 }">
+              <button class="page-link" @click="paginaActual--" aria-label="Anterior">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            <li 
+              v-for="p in paginasVisibles" 
+              :key="p" 
+              class="page-item" 
+              :class="{ active: p === paginaActual, disabled: p === '...' }"
+            >
+              <button class="page-link" @click="p !== '...' && (paginaActual = p)">{{ p }}</button>
+            </li>
+            <li class="page-item" :class="{ disabled: paginaActual === totalPaginas }">
+              <button class="page-link" @click="paginaActual++" aria-label="Siguiente">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
     </div>
 
@@ -304,7 +344,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue';
+import { ref, nextTick, onMounted, computed, watch } from 'vue';
 import { Modal } from 'bootstrap';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -312,9 +352,11 @@ import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
 import { useRequerimientosStore } from '../stores/requerimientos.store';
 import { useCatalogosStore } from '../stores/catalogos.store';
+import { useToastStore } from '../stores/toast.store';
 
 const store = useRequerimientosStore();
 const catStore = useCatalogosStore();
+const toastStore = useToastStore();
 
 const modalCrearRef = ref(null);
 const modalDetallesRef = ref(null);
@@ -327,6 +369,31 @@ const mensajeExito = ref('');
 const reqSeleccionado = ref(null);
 const detallesActuales = ref([]);
 const cargandoDetalles = ref(false);
+
+// ---- Paginación ----
+const paginaActual = ref(1);
+const porPagina = ref(25);
+
+const totalPaginas = computed(() => Math.ceil(store.historial.length / porPagina.value));
+
+const historialPaginado = computed(() => {
+  const inicio = (paginaActual.value - 1) * porPagina.value;
+  return store.historial.slice(inicio, inicio + porPagina.value);
+});
+
+const paginasVisibles = computed(() => {
+  const total = totalPaginas.value;
+  const actual = paginaActual.value;
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  
+  if (actual <= 4) return [1, 2, 3, 4, 5, '...', total];
+  if (actual >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '...', actual - 1, actual, actual + 1, '...', total];
+});
+
+// Resetear página al cambiar historial o tamaño de página
+watch(() => store.historial.length, () => { paginaActual.value = 1; });
+watch(porPagina, () => { paginaActual.value = 1; });
 
 // ---- Refs para navegación por teclado ----
 const fechaRef      = ref(null);
@@ -540,10 +607,11 @@ const guardar = async () => {
   });
   guardando.value = false;
   if (result.success) {
-    mensajeExito.value = `Requerimiento ${result.codigo} creado exitosamente.`;
-    setTimeout(() => bsModalCrear.hide(), 1500);
+    toastStore.addToast(`Requerimiento ${result.codigo} creado exitosamente.`, 'success');
+    setTimeout(() => bsModalCrear.hide(), 1000);
   } else {
     mensajeError.value = result.mensaje;
+    toastStore.addToast(result.mensaje, 'danger');
   }
 };
 

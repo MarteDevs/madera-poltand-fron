@@ -100,17 +100,28 @@
       </div>
 
       <div class="mp-card p-0 overflow-hidden">
-        <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+        <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
           <h6 class="mb-0 fw-semibold">Ingresos Registrados</h6>
-          <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-success border-success text-success" @click="exportarHistorialExcel" :disabled="store.historial.length === 0 || store.cargandoHistorial">
-              <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar Excel
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" @click="store.cargarHistorial()" :disabled="store.cargandoHistorial">
-              <span v-if="store.cargandoHistorial" class="spinner-border spinner-border-sm me-1"></span>
-              <i v-else class="bi bi-arrow-clockwise me-1"></i>
-              Actualizar
-            </button>
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2" style="font-size:0.8rem;">
+              <span class="text-muted">Mostrar</span>
+              <select v-model="porPagina" class="form-select form-select-sm" style="width:70px;">
+                <option :value="10">10</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-success border-success text-success" @click="exportarHistorialExcel" :disabled="store.historial.length === 0 || store.cargandoHistorial">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar Excel
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" @click="store.cargarHistorial()" :disabled="store.cargandoHistorial">
+                <span v-if="store.cargandoHistorial" class="spinner-border spinner-border-sm me-1"></span>
+                <i v-else class="bi bi-arrow-clockwise me-1"></i>
+                Actualizar
+              </button>
+            </div>
           </div>
         </div>
         <div class="table-responsive">
@@ -138,7 +149,7 @@
                   <i class="bi bi-inbox fs-4 d-block mb-2"></i>No hay ingresos registrados aún.
                 </td>
               </tr>
-              <tr v-for="ing in store.historial" :key="ing.id">
+              <tr v-for="ing in historialPaginado" :key="ing.id">
                 <td><span class="fw-medium text-primary" style="font-size:0.82rem;">{{ ing.codigo_ingreso }}</span></td>
                 <td>{{ ing.fecha }}</td>
                 <td>
@@ -452,15 +463,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { Modal } from 'bootstrap';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
 import { useIngresosStore } from '../stores/ingresos.store';
+import { useToastStore } from '../stores/toast.store';
 
 const store = useIngresosStore();
+const toastStore = useToastStore();
 const modalRef = ref(null);
 const modalDetalleRef = ref(null);
 let bsModal = null;
@@ -497,6 +510,30 @@ const form = ref({
 
 // Estado del modal de detalle
 const ingresoSeleccionado = ref(null);
+
+// ---- Paginación Historial ----
+const paginaActual = ref(1);
+const porPagina = ref(25);
+
+const totalPaginas = computed(() => Math.ceil(store.historial.length / porPagina.value));
+
+const historialPaginado = computed(() => {
+  const inicio = (paginaActual.value - 1) * porPagina.value;
+  return store.historial.slice(inicio, inicio + porPagina.value);
+});
+
+const paginasVisibles = computed(() => {
+  const total = totalPaginas.value;
+  const actual = paginaActual.value;
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  
+  if (actual <= 4) return [1, 2, 3, 4, 5, '...', total];
+  if (actual >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '...', actual - 1, actual, actual + 1, '...', total];
+});
+
+watch(() => store.historial.length, () => { paginaActual.value = 1; });
+watch(porPagina, () => { paginaActual.value = 1; });
 
 // Buscador del modal de ingreso
 const buscarReq = ref('');
@@ -680,10 +717,11 @@ const guardar = async () => {
   guardando.value = false;
 
   if (result.success) {
-    mensajeExito.value = `Ingreso ${result.codigo} registrado. Los estados se han actualizado.`;
-    setTimeout(() => bsModal.hide(), 1800);
+    toastStore.addToast(`Ingreso ${result.codigo} registrado exitosamente.`, 'success');
+    setTimeout(() => bsModal.hide(), 1000);
   } else {
     mensajeError.value = result.mensaje;
+    toastStore.addToast(result.mensaje, 'danger');
   }
 };
 
