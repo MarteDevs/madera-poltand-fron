@@ -296,10 +296,16 @@
                 <tbody>
                   <!-- SECCIÓN: MARCADOS (Siempre visibles) -->
                   <template v-if="itemsMarcados.length > 0">
-                    <tr v-for="item in itemsMarcados" :key="'marked-' + item.requerimiento_detalle_id" class="table-primary table-opacity-10 align-middle">
+                    <tr 
+                      v-for="item in itemsMarcados" 
+                      :key="'marked-' + item.requerimiento_detalle_id" 
+                      class="table-primary table-opacity-10 align-middle selectable-row"
+                      @click="toggleSeleccion(item)"
+                    >
                       <td class="text-center ps-3">
                         <input type="checkbox" class="form-check-input"
                           v-model="seleccionados[item.requerimiento_detalle_id]"
+                          @click.stop
                           @change="onCheck(item)" />
                       </td>
                       <td><span class="text-primary fw-bold">{{ item.codigo_req }}</span></td>
@@ -311,7 +317,8 @@
                       <td class="pe-3">
                         <input type="number" class="form-control form-control-sm text-center fw-bold"
                           v-model.number="cantidades[item.requerimiento_detalle_id]"
-                          :min="0.01" :max="item.faltante" step="0.01" />
+                          :min="0.01" :max="item.faltante" step="0.01"
+                          @click.stop />
                       </td>
                     </tr>
                     <tr v-if="!mostrarSoloMarcados && itemsFiltradosNoMarcados.length > 0">
@@ -326,11 +333,13 @@
                     <tr
                       v-for="item in itemsFiltradosPaginados"
                       :key="'filt-' + item.requerimiento_detalle_id"
-                      class="align-middle"
+                      class="align-middle selectable-row"
+                      @click="toggleSeleccion(item)"
                     >
                       <td class="text-center ps-3">
                         <input type="checkbox" class="form-check-input"
                           v-model="seleccionados[item.requerimiento_detalle_id]"
+                          @click.stop
                           @change="onCheck(item)" />
                       </td>
                       <td><span class="text-primary">{{ item.codigo_req }}</span></td>
@@ -343,7 +352,8 @@
                         <input type="number" class="form-control form-control-sm text-center"
                           v-model.number="cantidades[item.requerimiento_detalle_id]"
                           :min="0.01" :max="item.faltante" step="0.01"
-                          :disabled="!seleccionados[item.requerimiento_detalle_id]" />
+                          :disabled="!seleccionados[item.requerimiento_detalle_id]"
+                          @click.stop />
                       </td>
                     </tr>
                   </template>
@@ -390,78 +400,81 @@
             </div>
 
             <!-- SECCIÓN: ARTÍCULOS EXTRA -->
-            <div class="mt-4 border-top pt-4">
+            <div class="mt-5 border-top pt-4">
               <div class="d-flex align-items-center justify-content-between mb-3">
-                <h6 class="fw-semibold mb-0">Artículos No Solicitados (Extras)</h6>
-                <button class="btn btn-sm btn-outline-success" @click="agregarExtra">
-                  <i class="bi bi-plus-circle me-1"></i> Agregar Extra
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Artículos No Solicitados (Extras)</h6>
+                  <p class="text-muted mb-0" style="font-size:0.75rem;">Añade artículos que llegaron pero no estaban en el requerimiento.</p>
+                </div>
+                <button class="btn btn-sm btn-success px-3 shadow-sm" @click="agregarExtra" type="button">
+                  <i class="bi bi-plus-lg me-1"></i> Agregar Extra
                 </button>
               </div>
 
-              <div v-if="extras.length === 0" class="alert alert-light border py-2 text-center text-muted" style="font-size:0.8rem;">
-                No hay artículos extras añadidos.
+              <div v-if="extras.length === 0" class="mp-empty-extras text-center py-4 border rounded-3 bg-light opacity-75">
+                <i class="bi bi-plus-circle fs-3 text-muted d-block mb-2"></i>
+                <span class="text-muted small">No hay artículos extras añadidos en este ingreso.</span>
               </div>
 
-              <div v-else class="table-responsive mp-card p-0 overflow-hidden">
-                <table class="table table-sm mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Artículo</th>
-                      <th>Proveedor</th>
-                      <th>Mina</th>
-                      <th style="width:120px;">Cant.</th>
-                      <th style="width:120px;">P. Prov</th>
-                      <th style="width:120px;">P. Mina</th>
-                      <th style="width:40px;"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(ext, idx) in extras" :key="idx" class="align-middle">
-                      <td style="min-width:200px;">
+              <div v-else class="d-flex flex-column gap-3">
+                <div v-for="(ext, idx) in extras" :key="idx" class="card shadow-sm border-0 bg-white extra-card">
+                  <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between border-bottom-0">
+                    <span class="badge rounded-pill bg-dark text-white fw-bold px-3">EXTRA #{{ idx + 1 }}</span>
+                    <button class="btn btn-link text-danger p-0 border-0 shadow-none" @click="eliminarExtra(idx)" title="Eliminar extra">
+                      <i class="bi bi-trash3-fill"></i>
+                    </button>
+                  </div>
+                  <div class="card-body pt-1 pb-3 px-3">
+                    <div class="row g-3">
+                      <!-- Fila 1: Artículo y Proveedor -->
+                      <div class="col-md-6">
+                        <label class="form-label mb-1 fw-semibold text-secondary small">Artículo</label>
                         <SearchableSelect
                           v-model="ext.articulo_id"
                           :options="catalogStore.articulos"
-                          placeholder="— Artículo —"
+                          placeholder="Buscar artículo..."
                           @update:modelValue="onArticuloChange(idx)"
                         />
-                      </td>
-                      <td style="min-width:180px;">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label mb-1 fw-semibold text-secondary small">Proveedor</label>
                         <SearchableSelect
                           v-model="ext.proveedor_id"
                           :options="catalogStore.proveedores"
-                          placeholder="— Proveedor —"
+                          placeholder="Seleccionar proveedor..."
                         />
-                      </td>
-                      <td style="min-width:180px;">
+                      </div>
+
+                      <!-- Fila 2: Mina, Cantidad y Precios -->
+                      <div class="col-md-4">
+                        <label class="form-label mb-1 fw-semibold text-secondary small">Mina / Destino</label>
                         <SearchableSelect
                           v-model="ext.mina_id"
                           :options="catalogStore.minas"
-                          placeholder="— Mina —"
+                          placeholder="Destino final..."
                         />
-                      </td>
-                      <td>
-                        <input type="number" v-model.number="ext.cantidad_entregada" class="form-control form-control-sm text-center" min="0.01" step="0.01" placeholder="0" />
-                      </td>
-                      <td>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label mb-1 fw-semibold text-secondary small">Cantidad</label>
+                        <input type="number" v-model.number="ext.cantidad_entregada" class="form-control form-control-sm text-center fw-bold border-2" min="0.01" step="0.01" placeholder="0.00" />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label mb-1 fw-semibold text-secondary small">Precio Prov.</label>
                         <div class="input-group input-group-sm">
-                          <span class="input-group-text">$</span>
-                          <input type="number" v-model.number="ext.precio_proveedor" class="form-control text-end" step="0.01" />
+                          <span class="input-group-text bg-light text-muted border-end-0 fw-bold">S/.</span>
+                          <input type="number" v-model.number="ext.precio_proveedor" class="form-control border-start-0 text-end fw-semibold" step="0.01" />
                         </div>
-                      </td>
-                      <td>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label mb-1 fw-semibold text-secondary small">Precio Mina</label>
                         <div class="input-group input-group-sm">
-                          <span class="input-group-text">$</span>
-                          <input type="number" v-model.number="ext.precio_mina" class="form-control text-end" step="0.01" />
+                          <span class="input-group-text bg-light text-muted border-end-0 fw-bold">S/.</span>
+                          <input type="number" v-model.number="ext.precio_mina" class="form-control border-start-0 text-end fw-semibold" step="0.01" />
                         </div>
-                      </td>
-                      <td class="text-center">
-                        <button class="btn btn-sm btn-outline-danger border-0" @click="eliminarExtra(idx)" title="Eliminar este artículo extra">
-                          <i class="bi bi-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -861,10 +874,19 @@ const abrirModalIngreso = () => {
 
 const onCheck = (item) => {
   if (seleccionados[item.requerimiento_detalle_id]) {
-    cantidades[item.requerimiento_detalle_id] = '';
+    // Si se acaba de marcar, inicializar cantidad con vacío para obligar al usuario a escribir
+    if (cantidades[item.requerimiento_detalle_id] === undefined) {
+      cantidades[item.requerimiento_detalle_id] = '';
+    }
   } else {
     delete cantidades[item.requerimiento_detalle_id];
   }
+};
+
+const toggleSeleccion = (item) => {
+  const id = item.requerimiento_detalle_id;
+  seleccionados[id] = !seleccionados[id];
+  onCheck(item);
 };
 
 const guardar = async () => {
@@ -915,3 +937,46 @@ const verDetalle = async (ing) => {
   await store.cargarDetalleIngreso(ing.id);
 };
 </script>
+
+<style scoped>
+.extra-card {
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.extra-card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+  transform: translateY(-2px);
+}
+
+.extra-card .card-header {
+  border-bottom: 1px dashed #e2e8f0 !important;
+}
+
+.extra-card label {
+  letter-spacing: 0.02em;
+}
+
+.mp-empty-extras {
+  border-style: dashed !important;
+  border-width: 2px !important;
+}
+
+.table-opacity-10 {
+  background-color: rgba(13, 110, 253, 0.03) !important;
+}
+
+.selectable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.selectable-row:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.table-primary.selectable-row:hover {
+  background-color: rgba(13, 110, 253, 0.08) !important;
+}
+</style>
