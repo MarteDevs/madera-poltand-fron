@@ -256,19 +256,25 @@
               </div>
               
               <div class="row g-2">
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <div class="input-group input-group-sm">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Requerimiento o artículo..." v-model="buscarReq" />
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar..." v-model="buscarReq" />
                   </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                  <select v-model="filtroCodigoReq" class="form-select form-select-sm">
+                    <option value="">— Todos los Req —</option>
+                    <option v-for="req in uniqueRequerimientos" :key="req" :value="req">{{ req }}</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
                   <select v-model="filtroMina" class="form-select form-select-sm">
                     <option value="">— Todas las Minas —</option>
                     <option v-for="m in catalogStore.minas" :key="m.id" :value="m.nombre">{{ m.nombre }}</option>
                   </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <select v-model="filtroProveedor" class="form-select form-select-sm">
                     <option value="">— Todos los Proveedores —</option>
                     <option v-for="p in catalogStore.proveedores" :key="p.id" :value="p.nombre">{{ p.nombre }}</option>
@@ -693,7 +699,13 @@ watch(porPagina, () => { paginaActual.value = 1; });
 const buscarReq = ref('');
 const filtroMina = ref('');
 const filtroProveedor = ref('');
+const filtroCodigoReq = ref('');
 const mostrarSoloMarcados = ref(false);
+
+const uniqueRequerimientos = computed(() => {
+  const codes = store.pendientes.map(p => p.codigo_req);
+  return [...new Set(codes)].sort();
+});
 
 // ---- Paginación Items Pendientes (en modal) ----
 const paginaPendientesActual = ref(1);
@@ -716,7 +728,8 @@ const itemsFiltradosNoMarcados = computed(() => {
     const matchesSearch = !q || (item.codigo_req.toLowerCase().includes(q) || item.articulo.toLowerCase().includes(q));
     const matchesMina = !mina || item.mina === mina;
     const matchesProv = !prov || item.proveedor === prov;
-    return matchesSearch && matchesMina && matchesProv;
+    const matchesReq = !filtroCodigoReq.value || item.codigo_req === filtroCodigoReq.value;
+    return matchesSearch && matchesMina && matchesProv && matchesReq;
   });
 });
 
@@ -727,7 +740,7 @@ const itemsFiltradosPaginados = computed(() => {
   return itemsFiltradosNoMarcados.value.slice(inicio, inicio + porPaginaPendientes);
 });
 
-watch([buscarReq, filtroMina, filtroProveedor], () => {
+watch([buscarReq, filtroMina, filtroProveedor, filtroCodigoReq], () => {
   paginaPendientesActual.value = 1;
 });
 
@@ -853,6 +866,7 @@ const abrirModalIngreso = () => {
   buscarReq.value = '';
   filtroMina.value = '';
   filtroProveedor.value = '';
+  filtroCodigoReq.value = '';
   mostrarSoloMarcados.value = false;
   paginaPendientesActual.value = 1;
   Object.keys(seleccionados).forEach(k => delete seleccionados[k]);
