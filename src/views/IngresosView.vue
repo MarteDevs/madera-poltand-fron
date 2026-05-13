@@ -241,121 +241,228 @@
               Solo aparecen los ítems con faltante. Marca el checkbox e ingresa la cantidad entregada en este viaje.
             </p>
 
-            <!-- Buscador -->
-            <div class="d-flex align-items-center gap-2 mb-3">
-              <div class="position-relative flex-grow-1" style="max-width:380px;">
-                <i class="bi bi-search position-absolute text-muted" style="left:10px;top:50%;transform:translateY(-50%);font-size:0.85rem;"></i>
-                <input
-                  ref="refBuscador"
-                  type="text"
-                  class="form-control form-control-sm ps-4"
-                  v-model="buscarReq"
-                  placeholder="Filtrar por requerimiento o artículo..."
-                  autocomplete="off"
-                  style="border-radius:8px;"
-                />
-                <button
-                  v-if="buscarReq"
-                  class="btn btn-sm position-absolute p-0 border-0 text-muted"
-                  style="right:8px;top:50%;transform:translateY(-50%);background:none;"
-                  @click="buscarReq = ''"
-                >
-                  <i class="bi bi-x-circle-fill"></i>
-                </button>
+            <!-- Filtros y Controles -->
+            <div class="d-flex flex-column gap-3 mb-3 bg-light p-3 rounded-3 border">
+              <div class="d-flex align-items-center justify-content-between">
+                <h6 class="fw-bold mb-0 text-secondary" style="font-size:0.85rem; letter-spacing:0.02em;">
+                  FILTRAR ÍTEMS PENDIENTES
+                </h6>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="switchSoloMarcados" v-model="mostrarSoloMarcados">
+                  <label class="form-check-label fw-medium" for="switchSoloMarcados" style="font-size:0.8rem; cursor:pointer;">
+                    Solo marcados ({{ itemsMarcados.length }})
+                  </label>
+                </div>
               </div>
-              <span v-if="itemsMarcados.length > 0" class="badge bg-success">
-                <i class="bi bi-check2 me-1"></i>{{ itemsMarcados.length }} seleccionado{{ itemsMarcados.length > 1 ? 's' : '' }}
-              </span>
+              
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Requerimiento o artículo..." v-model="buscarReq" />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <select v-model="filtroMina" class="form-select form-select-sm">
+                    <option value="">— Todas las Minas —</option>
+                    <option v-for="m in catalogStore.minas" :key="m.id" :value="m.nombre">{{ m.nombre }}</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <select v-model="filtroProveedor" class="form-select form-select-sm">
+                    <option value="">— Todos los Proveedores —</option>
+                    <option v-for="p in catalogStore.proveedores" :key="p.id" :value="p.nombre">{{ p.nombre }}</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
-            <div class="table-responsive mp-card p-0 overflow-hidden">
-              <table class="table table-sm mb-0">
-                <thead>
+            <!-- Tabla de ítems -->
+            <!-- Tabla de ítems -->
+            <div class="table-responsive mp-card p-0" style="max-height:380px; overflow-y: auto; border:1px solid #e2e8f0; border-radius: 8px;">
+              <table class="table table-sm table-hover mb-0" style="font-size:0.85rem;">
+                <thead class="table-dark sticky-top" style="z-index: 10;">
                   <tr>
-                    <th style="width:40px;"></th>
-                    <th>Req.</th>
-                    <th>Mina</th>
-                    <th>Artículo</th>
-                    <th>Proveedor</th>
-                    <th class="text-end">Pedido</th>
-                    <th class="text-end">Faltante</th>
-                    <th style="width:140px;">Cant. Entregada</th>
+                    <th style="width:40px;" class="ps-3"></th>
+                    <th style="width:100px;">REQ.</th>
+                    <th>MINA</th>
+                    <th>ARTÍCULO</th>
+                    <th>PROVEEDOR</th>
+                    <th class="text-end" style="width:80px;">PEDIDO</th>
+                    <th class="text-end" style="width:80px;">FALTANTE</th>
+                    <th style="width:110px;" class="pe-3">VIAJE</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- SECCIÓN: MARCADOS (siempre arriba) -->
+                  <!-- SECCIÓN: MARCADOS (Siempre visibles) -->
                   <template v-if="itemsMarcados.length > 0">
-                    <tr style="background:#f0fdf4;">
-                      <td colspan="8" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#16a34a;letter-spacing:0.04em;border-bottom:2px solid #bbf7d0;">
-                        <i class="bi bi-check2-circle me-1"></i>SELECCIONADOS PARA ESTE VIAJE
-                      </td>
-                    </tr>
-                    <tr
-                      v-for="item in itemsMarcados"
-                      :key="'sel-' + item.requerimiento_detalle_id"
-                      style="background:#f0fdf4;"
-                    >
-                      <td>
+                    <tr v-for="item in itemsMarcados" :key="'marked-' + item.requerimiento_detalle_id" class="table-primary table-opacity-10 align-middle">
+                      <td class="text-center ps-3">
                         <input type="checkbox" class="form-check-input"
                           v-model="seleccionados[item.requerimiento_detalle_id]"
                           @change="onCheck(item)" />
                       </td>
-                      <td><span class="text-primary fw-medium" style="font-size:0.8rem;">{{ item.codigo_req }}</span></td>
-                      <td style="font-size:0.85rem;"><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
-                      <td style="font-size:0.85rem;">{{ item.articulo }}</td>
-                      <td class="text-muted" style="font-size:0.85rem;">{{ item.proveedor }}</td>
-                      <td class="text-end fw-medium" style="font-size:0.85rem;">{{ item.pedido }}</td>
-                      <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
-                      <td>
-                        <input type="number" class="form-control form-control-sm"
+                      <td><span class="text-primary fw-bold">{{ item.codigo_req }}</span></td>
+                      <td><span class="badge bg-white text-dark border">{{ item.mina }}</span></td>
+                      <td class="fw-medium">{{ item.articulo }}</td>
+                      <td class="text-muted">{{ item.proveedor }}</td>
+                      <td class="text-end">{{ item.pedido }}</td>
+                      <td class="text-end text-danger fw-bold">{{ item.faltante }}</td>
+                      <td class="pe-3">
+                        <input type="number" class="form-control form-control-sm text-center fw-bold"
                           v-model.number="cantidades[item.requerimiento_detalle_id]"
                           :min="0.01" :max="item.faltante" step="0.01" />
                       </td>
                     </tr>
-                    <!-- Separador si hay resultados de búsqueda también -->
-                    <tr v-if="itemsFiltradosNoMarcados.length > 0" style="background:#f8fafc;">
-                      <td colspan="8" class="py-1 px-3" style="font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.04em;border-bottom:1px solid #e2e8f0;">
-                        <i class="bi bi-list-ul me-1"></i>RESULTADOS DEL FILTRO
+                    <tr v-if="!mostrarSoloMarcados && itemsFiltradosNoMarcados.length > 0">
+                      <td colspan="8" class="py-2 px-3 text-secondary bg-light border-bottom border-top" style="font-size:0.7rem; font-weight:700;">
+                        <i class="bi bi-arrow-down-short"></i> RESTO DE ÍTEMS PENDIENTES
                       </td>
                     </tr>
                   </template>
 
                   <!-- SECCIÓN: FILTRADOS (no marcados) -->
-                  <tr v-if="!buscarReq && itemsMarcados.length === 0 && store.pendientes.length === 0">
-                    <td colspan="8" class="text-center py-5 text-success">
-                      <i class="bi bi-check-circle fs-4 d-block mb-2"></i>¡Todo entregado!
+                  <template v-if="!mostrarSoloMarcados">
+                    <tr
+                      v-for="item in itemsFiltradosPaginados"
+                      :key="'filt-' + item.requerimiento_detalle_id"
+                      class="align-middle"
+                    >
+                      <td class="text-center ps-3">
+                        <input type="checkbox" class="form-check-input"
+                          v-model="seleccionados[item.requerimiento_detalle_id]"
+                          @change="onCheck(item)" />
+                      </td>
+                      <td><span class="text-primary">{{ item.codigo_req }}</span></td>
+                      <td><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
+                      <td>{{ item.articulo }}</td>
+                      <td class="text-muted">{{ item.proveedor }}</td>
+                      <td class="text-end">{{ item.pedido }}</td>
+                      <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
+                      <td class="pe-3">
+                        <input type="number" class="form-control form-control-sm text-center"
+                          v-model.number="cantidades[item.requerimiento_detalle_id]"
+                          :min="0.01" :max="item.faltante" step="0.01"
+                          :disabled="!seleccionados[item.requerimiento_detalle_id]" />
+                      </td>
+                    </tr>
+                  </template>
+
+                  <!-- Sin resultados -->
+                  <tr v-if="!mostrarSoloMarcados && itemsFiltradosNoMarcados.length === 0 && itemsMarcados.length === 0">
+                    <td colspan="8" class="text-center py-5 text-muted">
+                      <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
+                      No hay ítems pendientes que coincidan con los filtros.
                     </td>
                   </tr>
-                  <tr
-                    v-for="item in itemsFiltradosNoMarcados"
-                    :key="'filt-' + item.requerimiento_detalle_id"
-                  >
-                    <td>
-                      <input type="checkbox" class="form-check-input"
-                        v-model="seleccionados[item.requerimiento_detalle_id]"
-                        @change="onCheck(item)" />
-                    </td>
-                    <td><span class="text-primary" style="font-size:0.8rem;">{{ item.codigo_req }}</span></td>
-                    <td style="font-size:0.85rem;"><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
-                    <td style="font-size:0.85rem;">{{ item.articulo }}</td>
-                    <td class="text-muted" style="font-size:0.85rem;">{{ item.proveedor }}</td>
-                    <td class="text-end fw-medium" style="font-size:0.85rem;">{{ item.pedido }}</td>
-                    <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
-                    <td>
-                      <input type="number" class="form-control form-control-sm"
-                        v-model.number="cantidades[item.requerimiento_detalle_id]"
-                        :min="0.01" :max="item.faltante" step="0.01"
-                        :disabled="!seleccionados[item.requerimiento_detalle_id]" />
-                    </td>
-                  </tr>
-                  <!-- Sin resultados del filtro -->
-                  <tr v-if="buscarReq && itemsFiltradosNoMarcados.length === 0 && itemsMarcados.length === 0">
-                    <td colspan="8" class="text-center py-4 text-muted" style="font-size:0.85rem;">
-                      <i class="bi bi-search d-block fs-4 mb-2"></i>Sin resultados para "{{ buscarReq }}"
+                  <tr v-if="mostrarSoloMarcados && itemsMarcados.length === 0">
+                    <td colspan="8" class="text-center py-5 text-muted">
+                      <i class="bi bi-check2-square fs-2 d-block mb-2 opacity-25"></i>
+                      No has seleccionado ningún ítem todavía.
                     </td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Paginación Pendientes -->
+            <div v-if="!mostrarSoloMarcados && totalPaginasPendientes > 1" class="d-flex align-items-center justify-content-between mt-3 mb-2 px-1">
+              <span class="text-muted" style="font-size: 0.8rem;">
+                Mostrando <strong>{{ itemsFiltradosPaginados.length }}</strong> de <strong>{{ itemsFiltradosNoMarcados.length }}</strong> resultados
+              </span>
+              <nav>
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" :class="{ disabled: paginaPendientesActual === 1 }">
+                    <button class="page-link shadow-none" @click="paginaPendientesActual--" type="button">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+                  </li>
+                  <li class="page-item active">
+                    <span class="page-link px-3 fw-bold">{{ paginaPendientesActual }} / {{ totalPaginasPendientes }}</span>
+                  </li>
+                  <li class="page-item" :class="{ disabled: paginaPendientesActual === totalPaginasPendientes }">
+                    <button class="page-link shadow-none" @click="paginaPendientesActual++" type="button">
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+
+            <!-- SECCIÓN: ARTÍCULOS EXTRA -->
+            <div class="mt-4 border-top pt-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-semibold mb-0">Artículos No Solicitados (Extras)</h6>
+                <button class="btn btn-sm btn-outline-success" @click="agregarExtra">
+                  <i class="bi bi-plus-circle me-1"></i> Agregar Extra
+                </button>
+              </div>
+
+              <div v-if="extras.length === 0" class="alert alert-light border py-2 text-center text-muted" style="font-size:0.8rem;">
+                No hay artículos extras añadidos.
+              </div>
+
+              <div v-else class="table-responsive mp-card p-0 overflow-hidden">
+                <table class="table table-sm mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Artículo</th>
+                      <th>Proveedor</th>
+                      <th>Mina</th>
+                      <th style="width:120px;">Cant.</th>
+                      <th style="width:120px;">P. Prov</th>
+                      <th style="width:120px;">P. Mina</th>
+                      <th style="width:40px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(ext, idx) in extras" :key="idx" class="align-middle">
+                      <td style="min-width:200px;">
+                        <SearchableSelect
+                          v-model="ext.articulo_id"
+                          :options="catalogStore.articulos"
+                          placeholder="— Artículo —"
+                          @update:modelValue="onArticuloChange(idx)"
+                        />
+                      </td>
+                      <td style="min-width:180px;">
+                        <SearchableSelect
+                          v-model="ext.proveedor_id"
+                          :options="catalogStore.proveedores"
+                          placeholder="— Proveedor —"
+                        />
+                      </td>
+                      <td style="min-width:180px;">
+                        <SearchableSelect
+                          v-model="ext.mina_id"
+                          :options="catalogStore.minas"
+                          placeholder="— Mina —"
+                        />
+                      </td>
+                      <td>
+                        <input type="number" v-model.number="ext.cantidad_entregada" class="form-control form-control-sm text-center" min="0.01" step="0.01" placeholder="0" />
+                      </td>
+                      <td>
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text">$</span>
+                          <input type="number" v-model.number="ext.precio_proveedor" class="form-control text-end" step="0.01" />
+                        </div>
+                      </td>
+                      <td>
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text">$</span>
+                          <input type="number" v-model.number="ext.precio_mina" class="form-control text-end" step="0.01" />
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-danger border-0" @click="eliminarExtra(idx)" title="Eliminar este artículo extra">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div v-if="mensajeError" class="alert alert-danger mt-3 py-2" style="font-size:0.85rem;">
@@ -420,23 +527,29 @@
                 </thead>
                 <tbody>
                   <tr v-for="d in store.detalleActual" :key="d.id" class="align-middle">
-                    <td><span class="text-primary fw-medium" style="font-size:0.82rem;">{{ d.codigo_req }}</span></td>
+                    <td>
+                      <span v-if="d.es_extra" class="badge bg-warning text-dark" style="font-size:0.7rem;">EXTRA</span>
+                      <span v-else class="text-primary fw-medium" style="font-size:0.82rem;">{{ d.codigo_req }}</span>
+                    </td>
                     <td style="font-size:0.85rem;">{{ d.articulo }}</td>
                     <td class="text-muted" style="font-size:0.85rem;">{{ d.proveedor }}</td>
                     <td class="text-end" style="color:#2563eb;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
                     <td class="text-end" style="color:#16a34a;">{{ Number(d.precio_mina).toFixed(2) }}</td>
-                    <td class="text-end fw-medium">{{ d.pedido }}</td>
+                    <td class="text-end fw-medium">{{ d.pedido || '—' }}</td>
                     <td class="text-end fw-bold text-success">{{ Number(d.cantidad_entregada).toFixed(2) }}</td>
                     <td class="text-end fw-semibold">
-                      <span v-if="(d.pedido - d.entregado_total) === 0" class="text-success fw-bold">
-                        <i class="bi bi-check-lg"></i> 0.00
-                      </span>
-                      <span v-else-if="(d.pedido - d.entregado_total) < 0" class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
-                        +{{ Math.abs(d.pedido - d.entregado_total).toFixed(2) }} (Exceso)
-                      </span>
-                      <span v-else class="text-danger fw-bold">
-                        {{ (d.pedido - d.entregado_total).toFixed(2) }}
-                      </span>
+                      <template v-if="!d.es_extra">
+                        <span v-if="(d.pedido - d.entregado_total) === 0" class="text-success fw-bold">
+                          <i class="bi bi-check-lg"></i> 0.00
+                        </span>
+                        <span v-else-if="(d.pedido - d.entregado_total) < 0" class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
+                          +{{ Math.abs(d.pedido - d.entregado_total).toFixed(2) }} (Exceso)
+                        </span>
+                        <span v-else class="text-danger fw-bold">
+                          {{ (d.pedido - d.entregado_total).toFixed(2) }}
+                        </span>
+                      </template>
+                      <span v-else class="text-muted small">Extra</span>
                     </td>
                   </tr>
                 </tbody>
@@ -471,9 +584,11 @@ import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
 import { useIngresosStore } from '../stores/ingresos.store';
 import { useToastStore } from '../stores/toast.store';
+import { useCatalogosStore } from '../stores/catalogos.store';
 
 const store = useIngresosStore();
 const toastStore = useToastStore();
+const catalogStore = useCatalogosStore();
 const modalRef = ref(null);
 const modalDetalleRef = ref(null);
 let bsModal = null;
@@ -508,6 +623,38 @@ const form = ref({
   observacion: ''
 });
 
+// Artículos extras (que no están en requerimiento)
+const extras = ref([]);
+
+const agregarExtra = () => {
+  extras.value.push({
+    articulo_id: null,
+    proveedor_id: null,
+    mina_id: null,
+    cantidad_entregada: 0,
+    precio_proveedor: 0,
+    precio_mina: 0
+  });
+};
+
+const eliminarExtra = (index) => {
+  extras.value.splice(index, 1);
+};
+
+const onArticuloChange = (idx) => {
+  const extra = extras.value[idx];
+  if (!extra.articulo_id) {
+    extra.precio_proveedor = 0;
+    extra.precio_mina = 0;
+    return;
+  }
+  const art = catalogStore.articulos.find(a => a.id === extra.articulo_id);
+  if (art) {
+    extra.precio_proveedor = Number(art.precio_proveedor);
+    extra.precio_mina = Number(art.precio_mina);
+  }
+};
+
 // Estado del modal de detalle
 const ingresoSeleccionado = ref(null);
 
@@ -537,6 +684,13 @@ watch(porPagina, () => { paginaActual.value = 1; });
 
 // Buscador del modal de ingreso
 const buscarReq = ref('');
+const filtroMina = ref('');
+const filtroProveedor = ref('');
+const mostrarSoloMarcados = ref(false);
+
+// ---- Paginación Items Pendientes (en modal) ----
+const paginaPendientesActual = ref(1);
+const porPaginaPendientes = 10;
 
 // Items ya marcados (siempre se muestran arriba, sin importar el filtro)
 const itemsMarcados = computed(() =>
@@ -546,16 +700,35 @@ const itemsMarcados = computed(() =>
 // Items que coinciden con búsqueda pero NO están marcados
 const itemsFiltradosNoMarcados = computed(() => {
   const q = buscarReq.value.trim().toLowerCase();
+  const mina = filtroMina.value;
+  const prov = filtroProveedor.value;
+
   const noMarcados = store.pendientes.filter(item => !seleccionados[item.requerimiento_detalle_id]);
-  if (!q) return noMarcados;
-  return noMarcados.filter(item =>
-    item.codigo_req.toLowerCase().includes(q) ||
-    item.articulo.toLowerCase().includes(q)
-  );
+  
+  return noMarcados.filter(item => {
+    const matchesSearch = !q || (item.codigo_req.toLowerCase().includes(q) || item.articulo.toLowerCase().includes(q));
+    const matchesMina = !mina || item.mina === mina;
+    const matchesProv = !prov || item.proveedor === prov;
+    return matchesSearch && matchesMina && matchesProv;
+  });
+});
+
+const totalPaginasPendientes = computed(() => Math.ceil(itemsFiltradosNoMarcados.value.length / porPaginaPendientes));
+
+const itemsFiltradosPaginados = computed(() => {
+  const inicio = (paginaPendientesActual.value - 1) * porPaginaPendientes;
+  return itemsFiltradosNoMarcados.value.slice(inicio, inicio + porPaginaPendientes);
+});
+
+watch([buscarReq, filtroMina, filtroProveedor], () => {
+  paginaPendientesActual.value = 1;
 });
 
 onMounted(async () => {
-  await store.cargarPendientes();
+  await Promise.all([
+    store.cargarPendientes(),
+    catalogStore.cargarCatalogos()
+  ]);
   bsModal = new Modal(modalRef.value);
   bsModalDetalle = new Modal(modalDetalleRef.value);
 });
@@ -669,11 +842,16 @@ const cambiarAHistorial = async () => {
 // ── Modal registrar ingreso ──
 const abrirModalIngreso = () => {
   form.value = { fecha: new Date().toISOString().split('T')[0], viaje: '', vale: '', observacion: '' };
+  extras.value = []; // Reset extras
+  buscarReq.value = '';
+  filtroMina.value = '';
+  filtroProveedor.value = '';
+  mostrarSoloMarcados.value = false;
+  paginaPendientesActual.value = 1;
   Object.keys(seleccionados).forEach(k => delete seleccionados[k]);
   Object.keys(cantidades).forEach(k => delete cantidades[k]);
   mensajeError.value = '';
   mensajeExito.value = '';
-  buscarReq.value = '';
   bsModal.show();
   // Enfocar el primer campo al abrir el modal
   nextTick(() => {
@@ -693,7 +871,7 @@ const guardar = async () => {
   mensajeError.value = '';
   mensajeExito.value = '';
 
-  const detalles = Object.entries(seleccionados)
+  const detallesNormales = Object.entries(seleccionados)
     .filter(([, val]) => val)
     .map(([id]) => ({
       requerimiento_detalle_id: parseInt(id),
@@ -701,19 +879,24 @@ const guardar = async () => {
     }))
     .filter(d => d.cantidad_entregada > 0);
 
-  if (detalles.length === 0) {
-    mensajeError.value = 'Selecciona al menos un artículo e ingresa una cantidad.';
+  // Validar extras
+  const extrasValidos = extras.value.filter(e => e.articulo_id && e.proveedor_id && e.mina_id && e.cantidad_entregada > 0);
+
+  if (detallesNormales.length === 0 && extrasValidos.length === 0) {
+    mensajeError.value = 'Selecciona al menos un artículo o agrega un extra válido.';
     return;
   }
 
-  guardando.value = true;
-  const result = await store.crearIngreso({
+  const payload = {
     fecha: form.value.fecha,
     viaje: form.value.viaje,
     vale: form.value.vale,
     observacion: form.value.observacion,
-    detalles
-  });
+    detalles: [...detallesNormales, ...extrasValidos]
+  };
+
+  guardando.value = true;
+  const result = await store.crearIngreso(payload);
   guardando.value = false;
 
   if (result.success) {
