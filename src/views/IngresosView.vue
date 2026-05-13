@@ -1,8 +1,9 @@
 <template>
   <PageLayout title="Ingresos de Madera">
     <template #actions>
-      <button class="btn btn-primary btn-sm" @click="abrirModalIngreso">
-        <i class="bi bi-plus-lg me-1"></i> Registrar Ingreso
+      <button class="btn btn-sm shadow-sm" :class="esMinimizado ? 'btn-warning fw-bold' : 'btn-primary'" @click="abrirModalIngreso">
+        <i class="bi me-1" :class="esMinimizado ? 'bi-play-circle-fill' : 'bi-plus-lg'"></i>
+        {{ esMinimizado ? 'Continuar Registro' : 'Registrar Ingreso' }}
       </button>
     </template>
 
@@ -184,9 +185,17 @@
     <div class="modal fade" id="modalIngreso" tabindex="-1" ref="modalRef">
       <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title fw-semibold">Registrar Ingreso (Viaje)</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <div class="modal-header bg-light py-2">
+            <h5 class="modal-title fw-semibold d-flex align-items-center">
+              <i class="bi bi-truck me-2 text-primary"></i>
+              Registrar Ingreso (Viaje)
+            </h5>
+            <div class="ms-auto d-flex align-items-center gap-1">
+              <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none px-2" @click="minimizarModal" title="Minimizar">
+                <i class="bi bi-dash-lg fs-5"></i>
+              </button>
+              <button type="button" class="btn-close" @click="descartarIngreso" title="Descartar y cerrar"></button>
+            </div>
           </div>
           <div class="modal-body">
             <!-- Cabecera ingreso -->
@@ -584,7 +593,21 @@
         </div>
       </div>
     </div>
-
+    <!-- Barra flotante cuando está minimizado -->
+    <div v-if="esMinimizado" class="minimizado-bar shadow-lg d-flex align-items-center p-2 rounded-pill bg-dark text-white border border-secondary">
+      <div class="mx-3 small d-none d-md-block">
+        <i class="bi bi-info-circle me-1 text-warning"></i>
+        Tienes un registro en progreso...
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" @click="reanudarModal">
+          <i class="bi bi-play-fill"></i> Reanudar
+        </button>
+        <button class="btn btn-sm btn-outline-light rounded-pill px-2 border-0" @click="descartarIngreso">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
   </PageLayout>
 </template>
 
@@ -593,6 +616,8 @@ import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { Modal } from 'bootstrap';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
 import { useIngresosStore } from '../stores/ingresos.store';
@@ -622,6 +647,7 @@ const opcionesViaje = [
 
 // Estado de tabs
 const tabActiva = ref('pendientes');
+const esMinimizado = ref(false);
 
 // Estado del modal de registro
 const guardando = ref(false);
@@ -860,7 +886,7 @@ const cambiarAHistorial = async () => {
 };
 
 // ── Modal registrar ingreso ──
-const abrirModalIngreso = () => {
+const limpiarFormulario = () => {
   form.value = { fecha: new Date().toISOString().split('T')[0], viaje: '', vale: '', observacion: '' };
   extras.value = []; // Reset extras
   buscarReq.value = '';
@@ -873,11 +899,55 @@ const abrirModalIngreso = () => {
   Object.keys(cantidades).forEach(k => delete cantidades[k]);
   mensajeError.value = '';
   mensajeExito.value = '';
+};
+
+const minimizarModal = () => {
+  esMinimizado.value = true;
+  bsModal.hide();
+};
+
+const reanudarModal = () => {
+  esMinimizado.value = false;
   bsModal.show();
-  // Enfocar el primer campo al abrir el modal
-  nextTick(() => {
-    setTimeout(() => refFecha.value?.focus(), 300);
+};
+
+const descartarIngreso = async () => {
+  const result = await Swal.fire({
+    title: '<span class="fw-bold">¿Descartar ingreso?</span>',
+    html: 'Se perderán todos los datos seleccionados y los artículos extras agregados.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: '<i class="bi bi-trash me-1"></i> Sí, descartar',
+    cancelButtonText: 'No, volver',
+    reverseButtons: true,
+    heightAuto: false,
+    customClass: {
+      popup: 'rounded-4 border-0 shadow',
+      confirmButton: 'rounded-pill px-4',
+      cancelButton: 'rounded-pill px-4'
+    }
   });
+
+  if (result.isConfirmed) {
+    limpiarFormulario();
+    esMinimizado.value = false;
+    if (bsModal) bsModal.hide();
+  }
+};
+
+const abrirModalIngreso = () => {
+  if (esMinimizado.value) {
+    reanudarModal();
+  } else {
+    limpiarFormulario();
+    bsModal.show();
+    // Enfocar el primer campo al abrir el modal
+    nextTick(() => {
+      setTimeout(() => refFecha.value?.focus(), 300);
+    });
+  }
 };
 
 const onCheck = (item) => {
@@ -931,6 +1001,7 @@ const guardar = async () => {
 
   if (result.success) {
     toastStore.addToast(`Ingreso ${result.codigo} registrado exitosamente.`, 'success');
+    esMinimizado.value = false;
     setTimeout(() => bsModal.hide(), 1000);
   } else {
     mensajeError.value = result.mensaje;
@@ -992,5 +1063,25 @@ const verDetalle = async (ing) => {
 .custom-checkbox:hover {
   transform: scale(1.15);
   border-color: #0a58ca !important;
+}
+
+/* Estilos Barra Minimizado */
+.minimizado-bar {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1060;
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 </style>
