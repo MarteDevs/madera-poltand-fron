@@ -299,13 +299,11 @@
                     <tr 
                       v-for="item in itemsMarcados" 
                       :key="'marked-' + item.requerimiento_detalle_id" 
-                      class="table-primary table-opacity-10 align-middle selectable-row"
-                      @click="toggleSeleccion(item)"
+                      class="table-primary table-opacity-10 align-middle"
                     >
                       <td class="text-center ps-3">
-                        <input type="checkbox" class="form-check-input"
+                        <input type="checkbox" class="form-check-input custom-checkbox"
                           v-model="seleccionados[item.requerimiento_detalle_id]"
-                          @click.stop
                           @change="onCheck(item)" />
                       </td>
                       <td><span class="text-primary fw-bold">{{ item.codigo_req }}</span></td>
@@ -317,8 +315,7 @@
                       <td class="pe-3">
                         <input type="number" class="form-control form-control-sm text-center fw-bold"
                           v-model.number="cantidades[item.requerimiento_detalle_id]"
-                          :min="0.01" :max="item.faltante" step="0.01"
-                          @click.stop />
+                          :min="0.01" :max="item.faltante" step="0.01" />
                       </td>
                     </tr>
                     <tr v-if="!mostrarSoloMarcados && itemsFiltradosNoMarcados.length > 0">
@@ -333,13 +330,11 @@
                     <tr
                       v-for="item in itemsFiltradosPaginados"
                       :key="'filt-' + item.requerimiento_detalle_id"
-                      class="align-middle selectable-row"
-                      @click="toggleSeleccion(item)"
+                      class="align-middle"
                     >
                       <td class="text-center ps-3">
-                        <input type="checkbox" class="form-check-input"
+                        <input type="checkbox" class="form-check-input custom-checkbox"
                           v-model="seleccionados[item.requerimiento_detalle_id]"
-                          @click.stop
                           @change="onCheck(item)" />
                       </td>
                       <td><span class="text-primary">{{ item.codigo_req }}</span></td>
@@ -352,8 +347,7 @@
                         <input type="number" class="form-control form-control-sm text-center"
                           v-model.number="cantidades[item.requerimiento_detalle_id]"
                           :min="0.01" :max="item.faltante" step="0.01"
-                          :disabled="!seleccionados[item.requerimiento_detalle_id]"
-                          @click.stop />
+                          :disabled="!seleccionados[item.requerimiento_detalle_id]" />
                       </td>
                     </tr>
                   </template>
@@ -967,16 +961,22 @@ const verDetalle = async (ing) => {
   background-color: rgba(13, 110, 253, 0.03) !important;
 }
 
-.selectable-row {
+.custom-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  border: 2px solid #0d6efd !important;
+  background-color: #fff;
+  transition: all 0.2s ease;
 }
 
-.selectable-row:hover {
-  background-color: rgba(0, 0, 0, 0.04) !important;
+.custom-checkbox:checked {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
 }
 
-.table-primary.selectable-row:hover {
-  background-color: rgba(13, 110, 253, 0.08) !important;
+.custom-checkbox:hover {
+  transform: scale(1.15);
+  border-color: #0a58ca !important;
 }
 </style>
