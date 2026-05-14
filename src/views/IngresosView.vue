@@ -439,18 +439,22 @@
                       <div class="col-md-6">
                         <label class="form-label mb-1 fw-semibold text-secondary small">Artículo</label>
                         <SearchableSelect
+                          :ref="el => refArticuloExtra[idx] = el"
                           v-model="ext.articulo_id"
                           :options="catalogStore.articulos"
                           placeholder="Buscar artículo..."
                           @update:modelValue="onArticuloChange(idx)"
+                          @navigate="refProveedorExtra[idx]?.focusOpen()"
                         />
                       </div>
                       <div class="col-md-6">
                         <label class="form-label mb-1 fw-semibold text-secondary small">Proveedor</label>
                         <SearchableSelect
+                          :ref="el => refProveedorExtra[idx] = el"
                           v-model="ext.proveedor_id"
                           :options="catalogStore.proveedores"
                           placeholder="Seleccionar proveedor..."
+                          @navigate="refMinaExtra[idx]?.focusOpen()"
                         />
                       </div>
 
@@ -458,14 +462,25 @@
                       <div class="col-md-4">
                         <label class="form-label mb-1 fw-semibold text-secondary small">Mina / Destino</label>
                         <SearchableSelect
+                          :ref="el => refMinaExtra[idx] = el"
                           v-model="ext.mina_id"
                           :options="catalogStore.minas"
                           placeholder="Destino final..."
+                          @navigate="refCantidadExtra[idx]?.focus()"
                         />
                       </div>
                       <div class="col-md-2">
                         <label class="form-label mb-1 fw-semibold text-secondary small">Cantidad</label>
-                        <input type="number" v-model.number="ext.cantidad_entregada" class="form-control form-control-sm text-center fw-bold border-2" min="0.01" step="0.01" placeholder="0.00" />
+                        <input
+                          :ref="el => refCantidadExtra[idx] = el"
+                          type="number"
+                          v-model.number="ext.cantidad_entregada"
+                          class="form-control form-control-sm text-center fw-bold border-2 border-primary bg-light-subtle"
+                          min="0"
+                          step="0.01"
+                          placeholder="0"
+                          @keydown.enter.prevent="agregarExtra()"
+                        />
                       </div>
                       <div class="col-md-3">
                         <label class="form-label mb-1 fw-semibold text-secondary small">Precio Prov.</label>
@@ -639,6 +654,12 @@ const refVale = ref(null);
 const refObservacion = ref(null);
 const refBuscador = ref(null);
 
+// Refs para navegación en extras (arrays)
+const refArticuloExtra = ref([]);
+const refProveedorExtra = ref([]);
+const refMinaExtra = ref([]);
+const refCantidadExtra = ref([]);
+
 // Opciones de viaje para el SearchableSelect
 const opcionesViaje = [
   ...Array.from({ length: 13 }, (_, i) => ({ id: `${i + 1}-VIAJE`, nombre: `${i + 1}-VIAJE` })),
@@ -673,6 +694,11 @@ const agregarExtra = () => {
     cantidad_entregada: 0,
     precio_proveedor: 0,
     precio_mina: 0
+  });
+  // Auto-enfocar el primer campo del nuevo extra
+  nextTick(() => {
+    const idx = extras.value.length - 1;
+    setTimeout(() => refArticuloExtra.value[idx]?.focusOpen(), 100);
   });
 };
 
