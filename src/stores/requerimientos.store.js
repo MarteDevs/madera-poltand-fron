@@ -62,6 +62,18 @@ export const useRequerimientosStore = defineStore('requerimientos', {
             } catch (err) {
                 return { success: false, mensaje: err.response?.data?.mensaje || 'Error al eliminar' };
             }
+        },
+        async getSiguienteCodigo(fecha) {
+            try {
+                const params = fecha ? { fecha } : {};
+                console.log('Solicitando siguiente código con params:', params);
+                const res = await api.get('/requerimientos/siguiente-codigo', { params });
+                console.log('Respuesta del siguiente código:', res.data);
+                return res.data.codigo;
+            } catch (err) {
+                console.error('Error obteniendo siguiente código:', err.response?.data || err.message);
+                return null;
+            }
         }
     }
 });

@@ -138,7 +138,7 @@
         <div class="modal-content" style="height:88vh; display:flex; flex-direction:column;">
           <div class="modal-header">
             <h5 class="modal-title fw-semibold">
-              {{ modoEdicion ? `Editando Requerimiento ${form.codigo_req}` : 'Nuevo Requerimiento' }}
+              {{ modoEdicion ? `Editando Requerimiento ${form.codigo_req}` : `Nuevo Requerimiento ${siguienteCodigoReq ? '— ' + siguienteCodigoReq : ''}` }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
@@ -361,6 +361,8 @@ import { ref, nextTick, onMounted, computed, watch } from 'vue';
 import { Modal } from 'bootstrap';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
 import { useRequerimientosStore } from '../stores/requerimientos.store';
@@ -382,6 +384,7 @@ const mensajeExito = ref('');
 const reqSeleccionado = ref(null);
 const detallesActuales = ref([]);
 const cargandoDetalles = ref(false);
+const siguienteCodigoReq = ref('');
 
 // ---- Estado de Edición ----
 const modoEdicion = ref(false);
@@ -439,14 +442,27 @@ onMounted(async () => {
   bsModalDetalles = new Modal(modalDetallesRef.value);
 });
 
-const abrirModalCrear = () => {
+const abrirModalCrear = async () => {
   modoEdicion.value = false;
   idRequerimientoEditar.value = null;
   form.value = formVacio();
   mensajeError.value = '';
   mensajeExito.value = '';
+  siguienteCodigoReq.value = 'Calculando...';
   bsModalCrear.show();
+  
+  const codigo = await store.getSiguienteCodigo(form.value.fecha);
+  siguienteCodigoReq.value = codigo || 'Desconocido (Guarde para generar)';
 };
+
+// Actualizar código en vivo si cambia la fecha mientras se crea uno nuevo
+watch(() => form.value.fecha, async (nuevaFecha) => {
+  if (!modoEdicion.value && nuevaFecha) {
+    siguienteCodigoReq.value = 'Calculando...';
+    const codigo = await store.getSiguienteCodigo(nuevaFecha);
+    siguienteCodigoReq.value = codigo || 'Desconocido (Guarde para generar)';
+  }
+});
 
 const prepararEdicion = async (r) => {
   modoEdicion.value = true;
@@ -482,7 +498,25 @@ const prepararEdicion = async (r) => {
 };
 
 const confirmarEliminar = async (r) => {
-  if (confirm(`¿Estás seguro de eliminar el requerimiento ${r.codigo_req}?`)) {
+  const result = await Swal.fire({
+    title: '<span class="fw-bold">¿Eliminar requerimiento?</span>',
+    html: `Se eliminará el registro <strong>${r.codigo_req}</strong>.<br><br><span class="text-danger fw-bold">Esta acción no se puede deshacer.</span>`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: '<i class="bi bi-trash me-1"></i> Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    customClass: {
+      popup: 'rounded-4 border-0 shadow',
+      confirmButton: 'rounded-pill px-4',
+      cancelButton: 'rounded-pill px-4'
+    }
+  });
+
+  if (result.isConfirmed) {
+    toastStore.addToast('Eliminando...', 'info');
     const res = await store.eliminarRequerimiento(r.id);
     if (res.success) {
       toastStore.addToast(`Requerimiento ${r.codigo_req} eliminado`, 'success');
