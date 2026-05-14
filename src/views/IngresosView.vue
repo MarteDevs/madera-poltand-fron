@@ -170,9 +170,19 @@
                   <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
                 </td>
                 <td class="text-center">
-                  <button class="btn btn-sm btn-outline-primary" style="font-size:0.78rem;" @click="verDetalle(ing)">
-                    <i class="bi bi-eye me-1"></i>Detalle
-                  </button>
+                  <div class="d-flex justify-content-center gap-1">
+                    <button class="btn btn-sm btn-outline-primary" style="font-size:0.78rem;" @click="verDetalle(ing)" title="Ver detalle">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <template v-if="authStore.esAdmin">
+                      <button class="btn btn-sm btn-outline-secondary" style="font-size:0.78rem;" @click="abrirModalEdicion(ing)" title="Editar">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" style="font-size:0.78rem;" @click="confirmarEliminarIngreso(ing)" title="Eliminar">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </template>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -188,7 +198,7 @@
           <div class="modal-header bg-light py-2">
             <h5 class="modal-title fw-semibold d-flex align-items-center">
               <i class="bi bi-truck me-2 text-primary"></i>
-              Registrar Ingreso (Viaje)
+              {{ modoEdicion ? 'Editar Ingreso (Viaje)' : 'Registrar Ingreso (Viaje)' }}
             </h5>
             <div class="ms-auto d-flex align-items-center gap-1">
               <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none px-2" @click="minimizarModal" title="Minimizar">
@@ -514,7 +524,7 @@
             <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button class="btn btn-primary" @click="guardar" :disabled="guardando">
               <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
-              {{ guardando ? 'Registrando...' : 'Registrar Ingreso' }}
+              {{ guardando ? 'Guardando...' : (modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso') }}
             </button>
           </div>
         </div>
@@ -636,10 +646,12 @@ import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import PageLayout from '../components/PageLayout.vue';
 import SearchableSelect from '../components/SearchableSelect.vue';
+import { useAuthStore } from '../stores/auth.store';
 import { useIngresosStore } from '../stores/ingresos.store';
 import { useToastStore } from '../stores/toast.store';
 import { useCatalogosStore } from '../stores/catalogos.store';
 
+const authStore = useAuthStore();
 const store = useIngresosStore();
 const toastStore = useToastStore();
 const catalogStore = useCatalogosStore();
@@ -670,6 +682,9 @@ const opcionesViaje = [
 // Estado de tabs
 const tabActiva = ref('pendientes');
 const esMinimizado = ref(false);
+
+const modoEdicion = ref(false);
+const ingresoEditId = ref(null);
 
 // Estado del modal de registro
 const guardando = ref(false);
@@ -926,6 +941,8 @@ const limpiarFormulario = () => {
   Object.keys(cantidades).forEach(k => delete cantidades[k]);
   mensajeError.value = '';
   mensajeExito.value = '';
+  modoEdicion.value = false;
+  ingresoEditId.value = null;
 };
 
 const minimizarModal = () => {
@@ -977,6 +994,39 @@ const abrirModalIngreso = () => {
   }
 };
 
+const abrirModalEdicion = async (ing) => {
+  limpiarFormulario();
+  modoEdicion.value = true;
+  ingresoEditId.value = ing.id;
+  
+  form.value.fecha = ing.fecha;
+  form.value.viaje = ing.viaje || '';
+  form.value.vale = ing.vale || '';
+  form.value.observacion = ing.observacion || '';
+
+  bsModal.show();
+  
+  toastStore.addToast('Cargando detalles del ingreso...', 'info');
+  await store.cargarDetalleIngreso(ing.id);
+  
+  // Poblar selecciones y extras
+  store.detalleActual.forEach(d => {
+    if (d.es_extra) {
+      extras.value.push({
+        articulo_id: d.articulo_id,
+        proveedor_id: d.proveedor_id,
+        mina_id: d.mina_id,
+        cantidad_entregada: Number(d.cantidad_entregada),
+        precio_proveedor: Number(d.precio_proveedor),
+        precio_mina: Number(d.precio_mina)
+      });
+    } else {
+      seleccionados[d.requerimiento_detalle_id] = true;
+      cantidades[d.requerimiento_detalle_id] = Number(d.cantidad_entregada);
+    }
+  });
+};
+
 const onCheck = (item) => {
   if (seleccionados[item.requerimiento_detalle_id]) {
     // Si se acaba de marcar, inicializar cantidad con vacío para obligar al usuario a escribir
@@ -1023,16 +1073,50 @@ const guardar = async () => {
   };
 
   guardando.value = true;
-  const result = await store.crearIngreso(payload);
+  let result;
+  if (modoEdicion.value) {
+    result = await store.actualizarIngreso(ingresoEditId.value, payload);
+  } else {
+    result = await store.crearIngreso(payload);
+  }
   guardando.value = false;
 
   if (result.success) {
-    toastStore.addToast(`Ingreso ${result.codigo} registrado exitosamente.`, 'success');
+    toastStore.addToast(result.mensaje || `Ingreso ${result.codigo} registrado exitosamente.`, 'success');
     esMinimizado.value = false;
     setTimeout(() => bsModal.hide(), 1000);
   } else {
     mensajeError.value = result.mensaje;
     toastStore.addToast(result.mensaje, 'danger');
+  }
+};
+
+const confirmarEliminarIngreso = async (ing) => {
+  const result = await Swal.fire({
+    title: '<span class="fw-bold">¿Eliminar ingreso?</span>',
+    html: `Se eliminará el registro <strong>${ing.codigo_ingreso}</strong>.<br>Esto puede revertir el estado de los requerimientos asociados.<br><br><span class="text-danger fw-bold">Esta acción no se puede deshacer.</span>`,
+    icon: 'error',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: '<i class="bi bi-trash me-1"></i> Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    customClass: {
+      popup: 'rounded-4 border-0 shadow',
+      confirmButton: 'rounded-pill px-4',
+      cancelButton: 'rounded-pill px-4'
+    }
+  });
+
+  if (result.isConfirmed) {
+    toastStore.addToast('Eliminando...', 'info');
+    const res = await store.eliminarIngreso(ing.id);
+    if (res.success) {
+      toastStore.addToast(res.mensaje, 'success');
+    } else {
+      toastStore.addToast(res.mensaje, 'danger');
+    }
   }
 };
 

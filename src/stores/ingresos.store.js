@@ -66,6 +66,24 @@ export const useIngresosStore = defineStore('ingresos', {
                 console.error('Error exportando historial:', err);
                 return { success: false, mensaje: 'Error al exportar detalle' };
             }
+        },
+        async actualizarIngreso(id, payload) {
+            try {
+                const res = await api.put(`/ingresos/${id}`, payload);
+                await Promise.all([this.cargarPendientes(), this.cargarHistorial()]);
+                return { success: true, mensaje: res.data.mensaje };
+            } catch (err) {
+                return { success: false, mensaje: err.response?.data?.mensaje || 'Error al actualizar' };
+            }
+        },
+        async eliminarIngreso(id) {
+            try {
+                const res = await api.delete(`/ingresos/${id}`);
+                await Promise.all([this.cargarPendientes(), this.cargarHistorial()]);
+                return { success: true, mensaje: res.data.mensaje };
+            } catch (err) {
+                return { success: false, mensaje: err.response?.data?.mensaje || 'Error al eliminar' };
+            }
         }
     }
 });
