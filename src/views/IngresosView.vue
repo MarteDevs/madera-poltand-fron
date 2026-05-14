@@ -433,11 +433,11 @@
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
-                  <div class="card-body pt-1 pb-3 px-3">
-                    <div class="row g-3">
+                  <div class="card-body p-2">
+                    <div class="row g-2">
                       <!-- Fila 1: Artículo y Proveedor -->
                       <div class="col-md-6">
-                        <label class="form-label mb-1 fw-semibold text-secondary small">Artículo</label>
+                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Artículo</label>
                         <SearchableSelect
                           :ref="el => refArticuloExtra[idx] = el"
                           v-model="ext.articulo_id"
@@ -448,7 +448,7 @@
                         />
                       </div>
                       <div class="col-md-6">
-                        <label class="form-label mb-1 fw-semibold text-secondary small">Proveedor</label>
+                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Proveedor</label>
                         <SearchableSelect
                           :ref="el => refProveedorExtra[idx] = el"
                           v-model="ext.proveedor_id"
@@ -460,7 +460,7 @@
 
                       <!-- Fila 2: Mina, Cantidad y Precios -->
                       <div class="col-md-4">
-                        <label class="form-label mb-1 fw-semibold text-secondary small">Mina / Destino</label>
+                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Mina / Destino</label>
                         <SearchableSelect
                           :ref="el => refMinaExtra[idx] = el"
                           v-model="ext.mina_id"
@@ -470,7 +470,7 @@
                         />
                       </div>
                       <div class="col-md-2">
-                        <label class="form-label mb-1 fw-semibold text-secondary small">Cantidad</label>
+                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Cantidad</label>
                         <input
                           :ref="el => refCantidadExtra[idx] = el"
                           type="number"
@@ -479,21 +479,22 @@
                           min="0"
                           step="0.01"
                           placeholder="0"
+                          style="font-size: 0.8rem; height: 28px;"
                           @keydown.enter.prevent="agregarExtra()"
                         />
                       </div>
                       <div class="col-md-3">
-                        <label class="form-label mb-1 fw-semibold text-secondary small">Precio Prov.</label>
+                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Precio Prov.</label>
                         <div class="input-group input-group-sm">
                           <span class="input-group-text bg-light text-muted border-end-0 fw-bold">S/.</span>
-                          <input type="number" v-model.number="ext.precio_proveedor" class="form-control border-start-0 text-end fw-semibold" step="0.01" />
+                          <input type="number" v-model.number="ext.precio_proveedor" class="form-control border-start-0 text-end fw-semibold" step="0.01" style="font-size: 0.8rem; height: 28px;" />
                         </div>
                       </div>
                       <div class="col-md-3">
-                        <label class="form-label mb-1 fw-semibold text-secondary small">Precio Mina</label>
+                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Precio Mina</label>
                         <div class="input-group input-group-sm">
                           <span class="input-group-text bg-light text-muted border-end-0 fw-bold">S/.</span>
-                          <input type="number" v-model.number="ext.precio_mina" class="form-control border-start-0 text-end fw-semibold" step="0.01" />
+                          <input type="number" v-model.number="ext.precio_mina" class="form-control border-start-0 text-end fw-semibold" step="0.01" style="font-size: 0.8rem; height: 28px;" />
                         </div>
                       </div>
                     </div>

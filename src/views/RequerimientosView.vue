@@ -197,70 +197,66 @@
               </button>
             </div>
 
-            <div class="table-responsive mp-card p-0 overflow-auto mb-2" style="flex:1;">
-              <table class="table table-sm mb-0">
-                <thead>
-                  <tr>
-                    <th>Artículo</th>
-                    <th style="width:110px;">Cantidad</th>
-                    <th style="width:120px; color:#2563eb;">P. Proveedor</th>
-                    <th style="width:120px; color:#16a34a;">P. Mina</th>
-                    <th style="width:50px;"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-if="form.detalles.length === 0">
-                    <td colspan="5" class="text-center text-muted py-3" style="font-size:0.85rem;">
-                      Agrega al menos un artículo
-                    </td>
-                  </tr>
-                  <tr v-for="(linea, i) in form.detalles" :key="i">
-                    <td style="min-width:240px;">
+            <div class="d-flex flex-column gap-3 mb-3 px-1" style="flex:1; overflow-y:auto;">
+              <div v-if="form.detalles.length === 0" class="text-center text-muted py-5 border rounded-3 bg-light">
+                <i class="bi bi-cart-plus fs-3 d-block mb-2"></i>
+                Agrega al menos un artículo al pedido
+              </div>
+              <div v-for="(linea, i) in form.detalles" :key="i" class="card shadow-sm border-0 req-item-card">
+                <div class="card-body p-2">
+                  <div class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Artículo</label>
                       <SearchableSelect
                         :ref="el => { if(el) articuloRefs[i] = el }"
                         v-model="linea.articulo_id"
                         :options="catStore.articulos"
                         placeholder="Seleccionar artículo"
+                        size="sm"
                         @update:modelValue="onArticuloChange(linea)"
                         @navigate="() => nextTick(() => cantidadRefs[i]?.focus())"
                       />
-                    </td>
-                    <td>
-                      <input type="number" class="form-control form-control-sm"
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Cantidad</label>
+                      <input type="number" class="form-control form-control-sm fw-bold border-2 border-primary bg-light-subtle"
                         :ref="el => { if(el) cantidadRefs[i] = el }"
                         v-model.number="linea.cantidad" min="1"
+                        style="font-size: 0.8rem; height: 28px;"
                         @keydown.enter.prevent="() => nextTick(() => precioProvRefs[i]?.focus())"
                       />
-                    </td>
-                    <td>
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">P. Prov (S/.)</label>
                       <input type="number" class="form-control form-control-sm"
                         :ref="el => { if(el) precioProvRefs[i] = el }"
                         v-model.number="linea.precio_proveedor" min="0" step="0.01"
-                        style="color:#2563eb; font-weight:600;"
+                        style="color:#2563eb; font-weight:600; font-size: 0.8rem; height: 28px;"
                         @keydown.enter.prevent="() => nextTick(() => precioMinaRefs[i]?.focus())"
                       />
-                    </td>
-                    <td>
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">P. Mina (S/.)</label>
                       <input type="number" class="form-control form-control-sm"
                         :ref="el => { if(el) precioMinaRefs[i] = el }"
                         v-model.number="linea.precio_mina" min="0" step="0.01"
-                        style="color:#16a34a; font-weight:600;"
+                        style="color:#16a34a; font-weight:600; font-size: 0.8rem; height: 28px;"
                         @keydown.enter.prevent="agregarYFocus"
                       />
-                    </td>
-                    <td>
+                    </div>
+                    <div class="col-md-1 text-end">
                       <button 
-                        class="btn btn-sm btn-outline-danger" 
+                        class="btn btn-outline-danger border-0" 
                         @click="quitarLinea(i)"
                         :disabled="linea.entregado > 0"
                         :title="linea.entregado > 0 ? 'No se puede quitar porque ya tiene entregas' : 'Quitar línea'"
                       >
-                        <i class="bi bi-trash"></i>
+                        <i class="bi bi-trash fs-5"></i>
                       </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div v-if="mensajeError" class="alert alert-danger py-2" style="font-size:0.85rem;">
@@ -710,3 +706,41 @@ const badgeClass = (estado) => {
   return map[estado] || 'badge-pendiente';
 };
 </script>
+
+<style scoped>
+/* Estilos para las tarjetas de ítems del requerimiento */
+.req-item-card {
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6 !important;
+  border-left: 5px solid #2563eb !important; /* Acento azul */
+  background-color: #f8fbff !important;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.req-item-card:hover {
+  border-color: #2563eb !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+.req-item-card .form-control:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.15) !important;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.badge-pendiente { background-color: #f3f4f6; color: #374151; }
+.badge-completado { background-color: #dcfce7; color: #166534; }
+.badge-parcial { background-color: #fef9c3; color: #854d0e; }
+.badge-cancelado { background-color: #fee2e2; color: #991b1b; }
+</style>
