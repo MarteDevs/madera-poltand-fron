@@ -1046,21 +1046,31 @@ const verDetalle = async (ing) => {
 <style scoped>
 .extra-card {
   transition: all 0.2s ease;
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid #dee2e6 !important;
+  border-left: 5px solid #0d6efd !important; /* Acento de color lateral */
+  background-color: #f8fbff !important; /* Fondo sutil azulado */
 }
 
 .extra-card:hover {
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
-  transform: translateY(-2px);
+  border-color: #0d6efd !important;
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.12) !important;
+  transform: translateY(-3px);
 }
 
 .extra-card .card-header {
-  border-bottom: 1px dashed #e2e8f0 !important;
+  border-bottom: 1px dashed #cbd5e1 !important;
+  background-color: transparent !important;
 }
 
 .extra-card label {
   letter-spacing: 0.02em;
+  color: #475569;
+}
+
+.extra-card .form-control:focus {
+  background-color: #fff !important;
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15) !important;
 }
 
 .mp-empty-extras {
