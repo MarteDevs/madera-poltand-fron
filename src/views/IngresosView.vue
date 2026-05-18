@@ -282,7 +282,7 @@
                   <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Observación</label>
                   <input ref="refObservacion" type="text" class="form-control form-control-sm"
                     v-model="form.observacion" placeholder="Opcional"
-                    @keydown.enter.prevent="refBuscador.focus()" />
+                    @keydown.enter.prevent="refFiltroReq?.focus()" />
                 </div>
               </div>
 
@@ -319,25 +319,19 @@
               </div>
               
               <div class="row g-2">
-                <div class="col-md-3">
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input ref="refBuscador" type="text" class="form-control border-start-0 ps-0" placeholder="Buscar..." v-model="buscarReq" />
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <select v-model="filtroCodigoReq" class="form-select form-select-sm">
+                <div class="col-md-4">
+                  <select ref="refFiltroReq" v-model="filtroCodigoReq" class="form-select form-select-sm">
                     <option value="">— Todos los Req —</option>
                     <option v-for="req in uniqueRequerimientos" :key="req" :value="req">{{ req }}</option>
                   </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                   <select v-model="filtroMina" class="form-select form-select-sm">
                     <option value="">— Todas las Minas —</option>
                     <option v-for="m in catalogStore.minas" :key="m.id" :value="m.nombre">{{ m.nombre }}</option>
                   </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                   <select v-model="filtroProveedor" class="form-select form-select-sm">
                     <option value="">— Todos los Proveedores —</option>
                     <option v-for="p in catalogStore.proveedores" :key="p.id" :value="p.nombre">{{ p.nombre }}</option>
@@ -359,7 +353,7 @@
                     <th>PROVEEDOR</th>
                     <th class="text-end" style="width:80px;">PEDIDO</th>
                     <th class="text-end" style="width:80px;">FALTANTE</th>
-                    <th style="width:110px;" class="pe-3">VIAJE</th>
+                    <th style="width:120px;" class="text-center pe-3">EN ESTE VIAJE</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -708,7 +702,7 @@ const refFecha = ref(null);
 const refViaje = ref(null);
 const refVale = ref(null);
 const refObservacion = ref(null);
-const refBuscador = ref(null);
+const refFiltroReq = ref(null);
 
 // Refs para navegación en extras (arrays)
 const refArticuloExtra = ref([]);
