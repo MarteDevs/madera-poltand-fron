@@ -71,7 +71,7 @@ import { useAuthStore } from '../stores/auth.store';
 const router = useRouter();
 const authStore = useAuthStore();
 const usuario = computed(() => authStore.usuario);
-const esAdmin = computed(() => authStore.rol_id === 1 || authStore.rol_id === 2);
+const esAdmin = computed(() => authStore.esAdmin);
 
 const menuOpen = ref(false);
 
