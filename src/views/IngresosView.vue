@@ -579,18 +579,32 @@
     <div class="modal fade" id="modalDetalleIngreso" tabindex="-1" ref="modalDetalleRef">
       <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-          <div class="modal-header">
-            <div>
-              <h5 class="modal-title fw-semibold mb-0">
-                <i class="bi bi-truck me-2 text-primary"></i>{{ ingresoSeleccionado?.codigo_ingreso }}
-              </h5>
-              <div class="d-flex gap-3 mt-1" style="font-size:0.8rem;color:#64748b;">
-                <span><i class="bi bi-calendar3 me-1"></i>{{ ingresoSeleccionado?.fecha }}</span>
-                <span v-if="ingresoSeleccionado?.viaje"><i class="bi bi-signpost-2 me-1"></i>Viaje: {{ ingresoSeleccionado?.viaje }}</span>
-                <span v-if="ingresoSeleccionado?.vale"><i class="bi bi-receipt me-1"></i>Vale: {{ ingresoSeleccionado?.vale }}</span>
+          <div class="modal-header d-flex flex-column align-items-start position-relative pb-3">
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+            <div class="w-100">
+              <div class="text-muted d-flex align-items-center mb-2" style="font-size:0.8rem;">
+                <i class="bi bi-truck me-1"></i>
+                <span class="font-monospace">{{ ingresoSeleccionado?.codigo_ingreso }}</span>
+              </div>
+              <div class="d-flex flex-wrap align-items-center gap-4 text-dark">
+                <div class="d-flex flex-column">
+                  <span class="text-secondary fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Fecha</span>
+                  <span class="fw-bold fs-5"><i class="bi bi-calendar3 me-1 text-primary"></i>{{ ingresoSeleccionado?.fecha }}</span>
+                </div>
+                <div v-if="ingresoSeleccionado?.viaje" class="d-flex flex-column">
+                  <span class="text-secondary fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Viaje</span>
+                  <span class="fw-bold fs-5"><i class="bi bi-signpost-2 me-1 text-success"></i>{{ ingresoSeleccionado?.viaje }}</span>
+                </div>
+                <div v-if="ingresoSeleccionado?.vale" class="d-flex flex-column">
+                  <span class="text-secondary fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Vale</span>
+                  <span class="fw-bold fs-5"><i class="bi bi-receipt me-1 text-warning"></i>{{ ingresoSeleccionado?.vale }}</span>
+                </div>
+                <div v-if="ingresoSeleccionado?.minas" class="d-flex flex-column">
+                  <span class="text-secondary fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Mina(s)</span>
+                  <span class="fw-bold fs-5"><i class="bi bi-geo-alt-fill me-1 text-danger"></i>{{ ingresoSeleccionado?.minas }}</span>
+                </div>
               </div>
             </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
             <p v-if="ingresoSeleccionado?.observacion" class="alert alert-light py-2 mb-3" style="font-size:0.85rem;">
