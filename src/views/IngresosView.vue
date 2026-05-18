@@ -322,7 +322,7 @@
                 <div class="col-md-3">
                   <div class="input-group input-group-sm">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar..." v-model="buscarReq" />
+                    <input ref="refBuscador" type="text" class="form-control border-start-0 ps-0" placeholder="Buscar..." v-model="buscarReq" />
                   </div>
                 </div>
                 <div class="col-md-3">
@@ -925,6 +925,13 @@ onMounted(async () => {
   ]);
   bsModal = new Modal(modalRef.value);
   bsModalDetalle = new Modal(modalDetalleRef.value);
+
+  // Auto focus al abrir el modal de ingreso
+  modalRef.value.addEventListener('shown.bs.modal', () => {
+    if (refFecha.value) {
+      refFecha.value.focus();
+    }
+  });
 
   if (store.borrador) {
     const b = store.borrador;
