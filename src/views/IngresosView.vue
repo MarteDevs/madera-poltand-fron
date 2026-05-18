@@ -100,6 +100,43 @@
         Registro de todos los viajes/ingresos de material procesados en el sistema.
       </div>
 
+      <!-- Filtros del historial -->
+      <div class="row g-2 mb-3">
+        <div class="col-md-4">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 ps-0"
+              placeholder="Buscar código, viaje, vale..."
+              v-model="filtroHistorialBuscar" />
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select v-model="filtroHistorialMina" class="form-select form-select-sm">
+            <option value="">— Todas las Minas —</option>
+            <option v-for="m in catalogStore.minas" :key="m.id" :value="m.nombre">
+              {{ m.nombre }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select v-model="filtroHistorialViaje" class="form-select form-select-sm">
+            <option value="">— Todos los Viajes —</option>
+            <option v-for="v in uniqueViajesHistorial" :key="v" :value="v">
+              {{ v }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-sm btn-outline-secondary w-100"
+            @click="limpiarFiltrosHistorial"
+            :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje">
+            <i class="bi bi-x-lg me-1"></i> Limpiar
+          </button>
+        </div>
+      </div>
+
       <div class="mp-card p-0 overflow-hidden">
         <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
           <h6 class="mb-0 fw-semibold">Ingresos Registrados</h6>
@@ -133,6 +170,7 @@
                 <th>Fecha</th>
                 <th>N° Viaje</th>
                 <th>Vale</th>
+                <th>Mina(s)</th>
                 <th class="text-center">Ítems</th>
                 <th class="text-end">Total Entregado</th>
                 <th>Observación</th>
@@ -159,6 +197,10 @@
                 </td>
                 <td>
                   <span v-if="ing.vale" class="fw-medium">{{ ing.vale }}</span>
+                  <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
+                </td>
+                <td>
+                  <span v-if="ing.minas" class="badge bg-light text-dark border" style="font-size:0.75rem;">{{ ing.minas }}</span>
                   <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
                 </td>
                 <td class="text-center">
@@ -209,49 +251,51 @@
           </div>
           <div class="modal-body">
             <!-- Cabecera ingreso -->
-            <div class="row g-3 mb-4">
-              <div class="col-md-3">
-                <label class="form-label fw-medium" style="font-size:0.85rem;">Fecha</label>
-                <input
-                  ref="refFecha"
-                  type="date"
-                  class="form-control"
-                  v-model="form.fecha"
-                  required
-                  @keydown.enter.prevent="refViaje.focusOpen ? refViaje.focusOpen() : refViaje.focus()"
-                />
+            <div class="mb-4">
+              <!-- Código preview -->
+              <div class="d-flex align-items-center gap-2 mb-3 p-2 bg-dark bg-opacity-10 rounded-3 border" style="font-size:0.78rem;">
+                <i class="bi bi-upc-scan text-primary"></i>
+                <span class="text-muted">Código:</span>
+                <span class="fw-bold text-primary font-monospace">{{ codigoPreview }}</span>
               </div>
-              <div class="col-md-3">
-                <label class="form-label fw-medium" style="font-size:0.85rem;">N° Viaje</label>
-                <SearchableSelect
-                  ref="refViaje"
-                  v-model="form.viaje"
-                  :options="opcionesViaje"
-                  placeholder="— Seleccionar —"
-                  @navigate="refVale.focus()"
-                />
+              
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Fecha</label>
+                  <input ref="refFecha" type="date" class="form-control form-control-sm"
+                    v-model="form.fecha" required
+                    @keydown.enter.prevent="refViaje.focusOpen ? refViaje.focusOpen() : refViaje.focus()" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">N° Viaje</label>
+                  <SearchableSelect ref="refViaje" v-model="form.viaje"
+                    :options="opcionesViaje" placeholder="— Seleccionar —"
+                    @navigate="refVale.focus()" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Vale</label>
+                  <input ref="refVale" type="text" class="form-control form-control-sm"
+                    v-model="form.vale" placeholder="Ej: 2850"
+                    @keydown.enter.prevent="refObservacion.focus()" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Observación</label>
+                  <input ref="refObservacion" type="text" class="form-control form-control-sm"
+                    v-model="form.observacion" placeholder="Opcional"
+                    @keydown.enter.prevent="refBuscador.focus()" />
+                </div>
               </div>
-              <div class="col-md-3">
-                <label class="form-label fw-medium" style="font-size:0.85rem;">Vale</label>
-                <input
-                  ref="refVale"
-                  type="text"
-                  class="form-control"
-                  v-model="form.vale"
-                  placeholder="Ej: 2850"
-                  @keydown.enter.prevent="refObservacion.focus()"
-                />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label fw-medium" style="font-size:0.85rem;">Observación</label>
-                <input
-                  ref="refObservacion"
-                  type="text"
-                  class="form-control"
-                  v-model="form.observacion"
-                  placeholder="Opcional"
-                  @keydown.enter.prevent="refBuscador.focus()"
-                />
+
+              <!-- Mina(s) dinámicas (se calcula de items seleccionados) -->
+              <div v-if="minasSeleccionadas.length > 0" class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-muted" style="font-size:0.75rem;">
+                  <i class="bi bi-geo-alt-fill me-1"></i>Mina(s):
+                </span>
+                <span v-for="m in minasSeleccionadas" :key="m"
+                  class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle"
+                  style="font-size:0.72rem;">
+                  {{ m }}
+                </span>
               </div>
             </div>
 
@@ -699,6 +743,32 @@ const form = ref({
   observacion: ''
 });
 
+// Minas de los items seleccionados (dinámico)
+const minasSeleccionadas = computed(() => {
+  const minasNormales = store.pendientes
+    .filter(p => seleccionados[p.requerimiento_detalle_id])
+    .map(p => p.mina);
+  const minasExtras = extras.value
+    .filter(e => e.mina_id)
+    .map(e => {
+      const m = catalogStore.minas.find(mi => mi.id === e.mina_id);
+      return m ? m.nombre : '';
+    })
+    .filter(n => n);
+  return [...new Set([...minasNormales, ...minasExtras])].sort();
+});
+
+// Preview del código de ingreso
+const codigoPreview = computed(() => {
+  if (modoEdicion.value) return ingresoEditId.value ? 'Editando...' : '';
+  const f = form.value.fecha;
+  if (!f) return 'ENT-________-___';
+  const d = new Date(f + 'T00:00:00'); // Evitar timezone issues
+  const yyyymmdd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  const viaje = form.value.viaje || 'SV';
+  return `ENT-${yyyymmdd}-${viaje}-###`;
+});
+
 // Artículos extras (que no están en requerimiento)
 const extras = ref([]);
 
@@ -739,15 +809,52 @@ const onArticuloChange = (idx) => {
 // Estado del modal de detalle
 const ingresoSeleccionado = ref(null);
 
-// ---- Paginación Historial ----
+// ---- Paginación y Filtros Historial ----
+const filtroHistorialBuscar = ref('');
+const filtroHistorialMina = ref('');
+const filtroHistorialViaje = ref('');
+
+const uniqueViajesHistorial = computed(() => {
+  const viajes = store.historial
+    .map(i => i.viaje)
+    .filter(v => v && v.trim() !== '');
+  return [...new Set(viajes)].sort();
+});
+
+const limpiarFiltrosHistorial = () => {
+  filtroHistorialBuscar.value = '';
+  filtroHistorialMina.value = '';
+  filtroHistorialViaje.value = '';
+};
+
+const historialFiltrado = computed(() => {
+  const q = filtroHistorialBuscar.value.trim().toLowerCase();
+  const mina = filtroHistorialMina.value;
+  const viaje = filtroHistorialViaje.value;
+
+  return store.historial.filter(ing => {
+    const matchBuscar = !q || 
+      ing.codigo_ingreso.toLowerCase().includes(q) ||
+      (ing.viaje || '').toLowerCase().includes(q) ||
+      (ing.vale || '').toLowerCase().includes(q);
+    const matchMina = !mina || (ing.minas || '').includes(mina);
+    const matchViaje = !viaje || ing.viaje === viaje;
+    return matchBuscar && matchMina && matchViaje;
+  });
+});
+
 const paginaActual = ref(1);
 const porPagina = ref(25);
 
-const totalPaginas = computed(() => Math.ceil(store.historial.length / porPagina.value));
+const totalPaginas = computed(() => Math.ceil(historialFiltrado.value.length / porPagina.value));
 
 const historialPaginado = computed(() => {
   const inicio = (paginaActual.value - 1) * porPagina.value;
-  return store.historial.slice(inicio, inicio + porPagina.value);
+  return historialFiltrado.value.slice(inicio, inicio + porPagina.value);
+});
+
+watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje], () => {
+  paginaActual.value = 1;
 });
 
 const paginasVisibles = computed(() => {
