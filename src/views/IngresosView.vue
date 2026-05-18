@@ -677,21 +677,6 @@
         </div>
       </div>
     </div>
-    <!-- Barra flotante cuando está minimizado -->
-    <div v-if="esMinimizado" class="minimizado-bar shadow-lg d-flex align-items-center p-2 rounded-pill bg-dark text-white border border-secondary">
-      <div class="mx-3 small d-none d-md-block">
-        <i class="bi bi-info-circle me-1 text-warning"></i>
-        Tienes un registro en progreso...
-      </div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" @click="reanudarModal">
-          <i class="bi bi-play-fill"></i> Reanudar
-        </button>
-        <button class="btn btn-sm btn-outline-light rounded-pill px-2 border-0" @click="descartarIngreso">
-          <i class="bi bi-trash"></i>
-        </button>
-      </div>
-    </div>
   </PageLayout>
 </template>
 
@@ -940,6 +925,29 @@ onMounted(async () => {
   ]);
   bsModal = new Modal(modalRef.value);
   bsModalDetalle = new Modal(modalDetalleRef.value);
+
+  if (store.borrador) {
+    const b = store.borrador;
+    form.value = { ...b.form };
+    Object.assign(seleccionados, b.seleccionados);
+    Object.assign(cantidades, b.cantidades);
+    extras.value = [...b.extras];
+    modoEdicion.value = b.modoEdicion;
+    ingresoEditId.value = b.ingresoEditId;
+    esMinimizado.value = true;
+    
+    if (store.debeAbrirModal) {
+      store.debeAbrirModal = false;
+      setTimeout(() => reanudarModal(), 100);
+    }
+  }
+});
+
+watch(() => store.debeAbrirModal, (val) => {
+  if (val) {
+    store.debeAbrirModal = false;
+    abrirModalIngreso();
+  }
 });
 
 // ── Exportar Excel ──
@@ -1067,6 +1075,14 @@ const limpiarFormulario = () => {
 };
 
 const minimizarModal = () => {
+  store.guardarBorrador({
+    form: { ...form.value },
+    seleccionados: { ...seleccionados },
+    cantidades: { ...cantidades },
+    extras: [...extras.value],
+    modoEdicion: modoEdicion.value,
+    ingresoEditId: ingresoEditId.value
+  });
   esMinimizado.value = true;
   bsModal.hide();
 };
@@ -1097,6 +1113,7 @@ const descartarIngreso = async () => {
 
   if (result.isConfirmed) {
     limpiarFormulario();
+    store.limpiarBorrador();
     esMinimizado.value = false;
     if (bsModal) bsModal.hide();
   }
@@ -1204,6 +1221,7 @@ const guardar = async () => {
 
   if (result.success) {
     toastStore.addToast(result.mensaje || `Ingreso ${result.codigo} registrado exitosamente.`, 'success');
+    store.limpiarBorrador();
     esMinimizado.value = false;
     setTimeout(() => bsModal.hide(), 1000);
   } else {

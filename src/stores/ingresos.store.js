@@ -7,11 +7,18 @@ export const useIngresosStore = defineStore('ingresos', {
         historial: [],
         detalleActual: [],
         cargando: false,
-        cargandoHistorial: false,
         cargandoDetalle: false,
-        error: null
+        error: null,
+        borrador: null, // { form, seleccionados, cantidades, extras, modoEdicion, ingresoEditId }
+        debeAbrirModal: false
     }),
     actions: {
+        guardarBorrador(datos) {
+            this.borrador = { ...datos };
+        },
+        limpiarBorrador() {
+            this.borrador = null;
+        },
         async cargarPendientes() {
             this.cargando = true;
             this.error = null;
