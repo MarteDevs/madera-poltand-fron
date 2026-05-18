@@ -526,124 +526,263 @@ const confirmarEliminar = async (r) => {
   }
 };
 
-const exportarExcel = async () => {
-  if (store.historial.length === 0) return;
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Requerimientos');
-
-  const headers = ['Código', 'Fecha', 'Mina', 'Supervisor', 'Estado', 'Total Proveedor', 'Total Mina'];
-  const headerRow = worksheet.addRow(headers);
-  
-  headerRow.eachCell((cell) => {
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1F497D' }
-    };
-    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-  });
-
-  worksheet.getColumn(1).width = 15;
-  worksheet.getColumn(2).width = 15;
-  worksheet.getColumn(3).width = 20;
-  worksheet.getColumn(4).width = 25;
-  worksheet.getColumn(5).width = 15;
-  worksheet.getColumn(6).width = 18;
-  worksheet.getColumn(7).width = 18;
-
-  store.historial.forEach(r => {
-    const row = worksheet.addRow([
-      r.codigo_req,
-      r.fecha,
-      r.mina,
-      r.supervisor || 'Sin asignar',
-      r.estado,
-      Number(r.total_proveedor),
-      Number(r.total_mina)
-    ]);
-    
-    row.getCell(6).numFmt = '"S/" #,##0.00';
-    row.getCell(6).font = { color: { argb: 'FF2563EB' }, bold: true };
-    row.getCell(7).numFmt = '"S/" #,##0.00';
-    row.getCell(7).font = { color: { argb: 'FF16A34A' }, bold: true };
-    
-    row.eachCell((cell) => {
-      cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-      cell.alignment = { vertical: 'middle' };
-    });
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(data, `Requerimientos_${new Date().toISOString().split('T')[0]}.xlsx`);
+// ── Helpers comunes de estilo Excel ──
+const XL_COLORS = {
+  headerBg: 'FF1B3A5C',
+  headerFont: 'FFFFFFFF',
+  titleColor: 'FF0D47A1',
+  subtitleFont: 'FF5A6A7E',
+  altRow: 'FFF2F7FC',
+  totalBg: 'FF2D3748',
+  totalFont: 'FFFFFFFF',
+  green: 'FF16A34A',
+  blue: 'FF2563EB',
+  red: 'FFDC2626',
+  borderColor: 'FFD1D5DB'
 };
 
+const xlBorder = {
+  top: { style: 'thin', color: { argb: XL_COLORS.borderColor } },
+  left: { style: 'thin', color: { argb: XL_COLORS.borderColor } },
+  bottom: { style: 'thin', color: { argb: XL_COLORS.borderColor } },
+  right: { style: 'thin', color: { argb: XL_COLORS.borderColor } }
+};
+
+const xlTitleBlock = (ws, subtitulo, totalCols) => {
+  const hoy = new Date();
+  const fechaStr = `${String(hoy.getDate()).padStart(2,'0')}/${String(hoy.getMonth()+1).padStart(2,'0')}/${hoy.getFullYear()}`;
+  const lastCol = String.fromCharCode(64 + Math.min(totalCols, 26));
+
+  ws.mergeCells(`A1:${lastCol}1`);
+  const r1 = ws.getCell('A1');
+  r1.value = 'MADERA POLTAND';
+  r1.font = { name: 'Calibri', size: 16, bold: true, color: { argb: XL_COLORS.titleColor } };
+  r1.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(1).height = 30;
+
+  ws.mergeCells(`A2:${lastCol}2`);
+  const r2 = ws.getCell('A2');
+  r2.value = subtitulo;
+  r2.font = { name: 'Calibri', size: 12, color: { argb: XL_COLORS.subtitleFont } };
+  r2.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(2).height = 22;
+
+  ws.mergeCells(`A3:${lastCol}3`);
+  const r3 = ws.getCell('A3');
+  r3.value = `Generado: ${fechaStr}`;
+  r3.font = { name: 'Calibri', size: 10, italic: true, color: { argb: XL_COLORS.subtitleFont } };
+  r3.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(3).height = 18;
+
+  ws.getRow(4).height = 8;
+};
+
+const xlStyleHeader = (ws, rowNum, totalCols) => {
+  const row = ws.getRow(rowNum);
+  row.height = 28;
+  row.eachCell({ includeEmpty: true }, (cell, col) => {
+    if (col <= totalCols) {
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: XL_COLORS.headerFont } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_COLORS.headerBg } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = xlBorder;
+    }
+  });
+};
+
+const xlStyleDataRow = (ws, rowNum, totalCols, isAlt) => {
+  const row = ws.getRow(rowNum);
+  row.height = 20;
+  row.eachCell({ includeEmpty: true }, (cell, col) => {
+    if (col <= totalCols) {
+      cell.font = cell.font || { name: 'Calibri', size: 10 };
+      cell.border = xlBorder;
+      if (isAlt) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_COLORS.altRow } };
+      }
+    }
+  });
+};
+
+const xlFormatDate = () => {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+};
+
+// ── Excel General (Resumen por requerimiento) ──
+const exportarExcel = async () => {
+  if (store.historial.length === 0) return;
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Madera Poltand ERP';
+  const ws = workbook.addWorksheet('Requerimientos');
+  const COLS = 7;
+
+  xlTitleBlock(ws, 'Requerimientos — Resumen General', COLS);
+
+  const headers = ['Código', 'Fecha', 'Mina', 'Supervisor', 'Estado', 'Total Prov.', 'Total Mina'];
+  const widths = [15, 12, 18, 20, 12, 14, 14];
+  headers.forEach((h, i) => {
+    ws.getColumn(i + 1).width = widths[i];
+    ws.getCell(5, i + 1).value = h;
+  });
+  xlStyleHeader(ws, 5, COLS);
+
+  const startRow = 6;
+  store.historial.forEach((r, idx) => {
+    const rowNum = startRow + idx;
+    const row = ws.getRow(rowNum);
+    row.getCell(1).value = r.codigo_req;
+    row.getCell(2).value = r.fecha;
+    row.getCell(3).value = r.mina;
+    row.getCell(4).value = r.supervisor || 'Sin asignar';
+    row.getCell(5).value = r.estado;
+    row.getCell(6).value = Number(r.total_proveedor);
+    row.getCell(7).value = Number(r.total_mina);
+
+    // Formato S/
+    row.getCell(6).numFmt = '"S/" #,##0.00';
+    row.getCell(6).alignment = { horizontal: 'right' };
+    row.getCell(6).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL_COLORS.blue } };
+    row.getCell(7).numFmt = '"S/" #,##0.00';
+    row.getCell(7).alignment = { horizontal: 'right' };
+    row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL_COLORS.green } };
+
+    [1,2,3,4,5].forEach(c => { row.getCell(c).alignment = { horizontal: 'left', vertical: 'middle' }; });
+
+    xlStyleDataRow(ws, rowNum, COLS, idx % 2 === 1);
+  });
+
+  // Fila de totales
+  const totalRow = startRow + store.historial.length;
+  const lastData = totalRow - 1;
+  ws.mergeCells(`A${totalRow}:E${totalRow}`);
+  ws.getCell(`A${totalRow}`).value = 'TOTALES';
+  ws.getCell(`A${totalRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: XL_COLORS.totalFont } };
+  ws.getCell(`A${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
+
+  ws.getCell(`F${totalRow}`).value = { formula: `SUM(F${startRow}:F${lastData})` };
+  ws.getCell(`G${totalRow}`).value = { formula: `SUM(G${startRow}:G${lastData})` };
+
+  const tRow = ws.getRow(totalRow);
+  tRow.height = 26;
+  tRow.eachCell({ includeEmpty: true }, (cell, col) => {
+    if (col <= COLS) {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_COLORS.totalBg } };
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: XL_COLORS.totalFont } };
+      cell.border = xlBorder;
+      if (col >= 6) { cell.numFmt = '"S/" #,##0.00'; cell.alignment = { horizontal: 'right', vertical: 'middle' }; }
+    }
+  });
+
+  ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9,
+    margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } };
+  ws.views = [{ state: 'frozen', ySplit: 5 }];
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `MP_Requerimientos_${xlFormatDate()}.xlsx`);
+};
+
+// ── Excel Detallado (con ítems de cada requerimiento) ──
 const exportarExcelDetallado = async () => {
   if (store.historial.length === 0) return;
-  
+
   const detalles = await store.getHistorialDetallado();
   if (!detalles || detalles.length === 0) return;
 
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Req. Detalle');
+  workbook.creator = 'Madera Poltand ERP';
+  const ws = workbook.addWorksheet('Req. Detalle');
+  const COLS = 14;
+
+  xlTitleBlock(ws, 'Requerimientos — Detalle por Artículo', COLS);
 
   const headers = [
-    'Código', 'Fecha', 'Mina', 'Supervisor', 'Estado', 
-    'Artículo', 'Proveedor', 'Pedido', 'Entregado', 'Faltante', 
-    'P. Prov', 'P. Mina', 'T. Prov. Línea', 'T. Mina Línea'
+    'Código', 'Fecha', 'Mina', 'Supervisor', 'Estado',
+    'Artículo', 'Proveedor', 'Pedido', 'Entregado', 'Faltante',
+    'P.Prov', 'P.Mina', 'T.Prov', 'T.Mina'
   ];
-  const headerRow = worksheet.addRow(headers);
-  
-  headerRow.eachCell((cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D9488' } }; 
-    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+  const widths = [13, 10, 14, 16, 10, 22, 14, 9, 9, 9, 9, 9, 10, 10];
+  headers.forEach((h, i) => {
+    ws.getColumn(i + 1).width = widths[i];
+    ws.getCell(5, i + 1).value = h;
+  });
+  xlStyleHeader(ws, 5, COLS);
+
+  const startRow = 6;
+  const numCols = [8, 9, 10, 11, 12, 13, 14];
+
+  detalles.forEach((r, idx) => {
+    const rowNum = startRow + idx;
+    const row = ws.getRow(rowNum);
+    row.getCell(1).value = r.codigo_req;
+    row.getCell(2).value = r.fecha;
+    row.getCell(3).value = r.mina;
+    row.getCell(4).value = r.supervisor || 'Sin asignar';
+    row.getCell(5).value = r.estado;
+    row.getCell(6).value = r.articulo;
+    row.getCell(7).value = r.proveedor;
+    row.getCell(8).value = Number(r.pedido);
+    row.getCell(9).value = Number(r.entregado);
+    row.getCell(10).value = Number(r.faltante);
+    row.getCell(11).value = Number(r.precio_proveedor);
+    row.getCell(12).value = Number(r.precio_mina);
+    row.getCell(13).value = Number(r.total_proveedor_linea);
+    row.getCell(14).value = Number(r.total_mina_linea);
+
+    numCols.forEach(c => {
+      row.getCell(c).numFmt = '#,##0.00';
+      row.getCell(c).alignment = { horizontal: 'right', vertical: 'middle' };
+    });
+    // S/ format para precios/totales
+    [11, 12, 13, 14].forEach(c => { row.getCell(c).numFmt = '"S/" #,##0.00'; });
+
+    for (let c = 1; c <= 7; c++) { row.getCell(c).alignment = { horizontal: 'left', vertical: 'middle' }; }
+
+    // Color faltante
+    const falt = Number(r.faltante);
+    if (falt > 0) row.getCell(10).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL_COLORS.red } };
+    else if (falt < 0) row.getCell(10).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL_COLORS.blue } };
+    else row.getCell(10).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL_COLORS.green } };
+
+    // Color totales
+    row.getCell(13).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL_COLORS.blue } };
+    row.getCell(14).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL_COLORS.green } };
+
+    xlStyleDataRow(ws, rowNum, COLS, idx % 2 === 1);
   });
 
-  worksheet.getColumn(1).width = 15;
-  worksheet.getColumn(2).width = 15;
-  worksheet.getColumn(3).width = 20;
-  worksheet.getColumn(4).width = 25;
-  worksheet.getColumn(5).width = 15;
-  worksheet.getColumn(6).width = 25;
-  worksheet.getColumn(7).width = 20;
-  worksheet.getColumn(8).width = 12;
-  worksheet.getColumn(9).width = 12;
-  worksheet.getColumn(10).width = 12;
-  worksheet.getColumn(11).width = 15;
-  worksheet.getColumn(12).width = 15;
-  worksheet.getColumn(13).width = 18;
-  worksheet.getColumn(14).width = 18;
+  // Fila de totales — solo T.Prov y T.Mina
+  const totalRow = startRow + detalles.length;
+  const lastData = totalRow - 1;
+  ws.mergeCells(`A${totalRow}:L${totalRow}`);
+  ws.getCell(`A${totalRow}`).value = 'TOTALES';
+  ws.getCell(`A${totalRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: XL_COLORS.totalFont } };
+  ws.getCell(`A${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
 
-  detalles.forEach(r => {
-    const row = worksheet.addRow([
-      r.codigo_req, r.fecha, r.mina, r.supervisor, r.estado,
-      r.articulo, r.proveedor, 
-      Number(r.pedido), Number(r.entregado), Number(r.faltante),
-      Number(r.precio_proveedor), Number(r.precio_mina),
-      Number(r.total_proveedor_linea), Number(r.total_mina_linea)
-    ]);
-    
-    [11, 12, 13, 14].forEach(col => {
-      row.getCell(col).numFmt = '"S/" #,##0.00';
-    });
-    
-    row.getCell(10).font = { color: { argb: r.faltante > 0 ? 'FFDC2626' : (r.faltante < 0 ? 'FF2563EB' : 'FF16A34A') }, bold: true };
-    row.getCell(13).font = { color: { argb: 'FF2563EB' }, bold: true };
-    row.getCell(14).font = { color: { argb: 'FF16A34A' }, bold: true };
-    
-    row.eachCell((cell) => {
-      cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-      cell.alignment = { vertical: 'middle' };
-    });
+  ['M', 'N'].forEach(col => {
+    ws.getCell(`${col}${totalRow}`).value = { formula: `SUM(${col}${startRow}:${col}${lastData})` };
   });
+
+  const tRow = ws.getRow(totalRow);
+  tRow.height = 26;
+  tRow.eachCell({ includeEmpty: true }, (cell, col) => {
+    if (col <= COLS) {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_COLORS.totalBg } };
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: XL_COLORS.totalFont } };
+      cell.border = xlBorder;
+      if (col >= 13) { cell.numFmt = '"S/" #,##0.00'; cell.alignment = { horizontal: 'right', vertical: 'middle' }; }
+    }
+  });
+
+  ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9,
+    margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } };
+  ws.views = [{ state: 'frozen', ySplit: 5 }];
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(data, `Req_Detallados_${new Date().toISOString().split('T')[0]}.xlsx`);
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `MP_Req_Detallado_${xlFormatDate()}.xlsx`);
 };
 
 const agregarLinea = () => {
