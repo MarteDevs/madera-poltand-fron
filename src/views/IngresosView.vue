@@ -951,102 +951,302 @@ watch(() => store.debeAbrirModal, (val) => {
   }
 });
 
-// ── Exportar Excel ──
+// ── Helpers comunes de estilo Excel ──
+const COLORS = {
+  headerBg: 'FF1B3A5C',    // Azul marino oscuro
+  headerFont: 'FFFFFFFF',
+  titleBg: 'FF0D47A1',
+  subtitleFont: 'FF5A6A7E',
+  altRow: 'FFF2F7FC',      // Azul claro alterno
+  totalBg: 'FF2D3748',     // Gris oscuro
+  totalFont: 'FFFFFFFF',
+  green: 'FF16A34A',
+  red: 'FFDC2626',
+  borderColor: 'FFD1D5DB'
+};
+
+const thinBorder = {
+  top: { style: 'thin', color: { argb: COLORS.borderColor } },
+  left: { style: 'thin', color: { argb: COLORS.borderColor } },
+  bottom: { style: 'thin', color: { argb: COLORS.borderColor } },
+  right: { style: 'thin', color: { argb: COLORS.borderColor } }
+};
+
+const addTitleBlock = (ws, titulo, subtitulo, totalCols) => {
+  const hoy = new Date();
+  const fechaStr = `${String(hoy.getDate()).padStart(2,'0')}/${String(hoy.getMonth()+1).padStart(2,'0')}/${hoy.getFullYear()}`;
+  const lastCol = String.fromCharCode(64 + totalCols);
+
+  // Fila 1 — Título empresa
+  ws.mergeCells(`A1:${lastCol}1`);
+  const r1 = ws.getCell('A1');
+  r1.value = 'MADERA POLTAND';
+  r1.font = { name: 'Calibri', size: 16, bold: true, color: { argb: COLORS.titleBg } };
+  r1.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(1).height = 30;
+
+  // Fila 2 — Subtítulo
+  ws.mergeCells(`A2:${lastCol}2`);
+  const r2 = ws.getCell('A2');
+  r2.value = subtitulo;
+  r2.font = { name: 'Calibri', size: 12, color: { argb: COLORS.subtitleFont } };
+  r2.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(2).height = 22;
+
+  // Fila 3 — Fecha
+  ws.mergeCells(`A3:${lastCol}3`);
+  const r3 = ws.getCell('A3');
+  r3.value = `Generado: ${fechaStr}`;
+  r3.font = { name: 'Calibri', size: 10, italic: true, color: { argb: COLORS.subtitleFont } };
+  r3.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(3).height = 18;
+
+  // Fila 4 — separador vacío
+  ws.getRow(4).height = 8;
+};
+
+const styleHeaderRow = (ws, rowNum, totalCols) => {
+  const row = ws.getRow(rowNum);
+  row.height = 28;
+  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    if (colNumber <= totalCols) {
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.headerFont } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.headerBg } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = thinBorder;
+    }
+  });
+};
+
+const styleDataRow = (ws, rowNum, totalCols, isAlt) => {
+  const row = ws.getRow(rowNum);
+  row.height = 20;
+  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    if (colNumber <= totalCols) {
+      cell.font = { name: 'Calibri', size: 10 };
+      cell.border = thinBorder;
+      if (isAlt) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.altRow } };
+      }
+    }
+  });
+};
+
+const setupPrintArea = (ws, totalCols, lastDataRow) => {
+  const lastCol = String.fromCharCode(64 + totalCols);
+  ws.pageSetup = {
+    orientation: 'landscape',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    paperSize: 9, // A4
+    margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }
+  };
+  ws.views = [{ state: 'frozen', ySplit: 5 }]; // Congelar hasta cabecera (fila 5)
+};
+
+const formatDate = () => {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+};
+
+// ── Exportar Pendientes Excel ──
 const exportarPendientesExcel = async () => {
   if (store.pendientes.length === 0) return;
 
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Pendientes Entrega');
+  workbook.creator = 'Madera Poltand ERP';
+  const ws = workbook.addWorksheet('Pendientes Entrega');
+  const TOTAL_COLS = 7;
 
-  worksheet.columns = [
-    { header: 'Código Req.', key: 'codigo', width: 18 },
-    { header: 'Mina', key: 'mina', width: 25 },
-    { header: 'Artículo', key: 'articulo', width: 45 },
-    { header: 'Proveedor', key: 'proveedor', width: 30 },
-    { header: 'Pedido', key: 'pedido', width: 15 },
-    { header: 'Entregado', key: 'entregado', width: 15 },
-    { header: 'Faltante', key: 'faltante', width: 15 }
-  ];
+  // 1. Título
+  addTitleBlock(ws, 'MADERA POLTAND', 'Pendientes de Entrega', TOTAL_COLS);
 
-  // Estilo a la cabecera
-  const headerRow = worksheet.getRow(1);
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D6EFD' } };
-  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-
-  store.pendientes.forEach(item => {
-    worksheet.addRow({
-      codigo: item.codigo_req,
-      mina: item.mina,
-      articulo: item.articulo,
-      proveedor: item.proveedor,
-      pedido: Number(item.pedido),
-      entregado: Number(item.entregado),
-      faltante: Number(item.faltante)
-    });
+  // 2. Cabecera en fila 5
+  const headers = ['Código Req.', 'Mina', 'Artículo', 'Proveedor', 'Pedido', 'Entregado', 'Faltante'];
+  const widths = [15, 16, 30, 20, 11, 11, 11];
+  headers.forEach((h, i) => {
+    ws.getColumn(i + 1).width = widths[i];
+    ws.getCell(5, i + 1).value = h;
   });
+  styleHeaderRow(ws, 5, TOTAL_COLS);
+
+  // 3. Datos desde fila 6
+  const dataStartRow = 6;
+  store.pendientes.forEach((item, idx) => {
+    const rowNum = dataStartRow + idx;
+    const row = ws.getRow(rowNum);
+    row.getCell(1).value = item.codigo_req;
+    row.getCell(2).value = item.mina;
+    row.getCell(3).value = item.articulo;
+    row.getCell(4).value = item.proveedor;
+    row.getCell(5).value = Number(item.pedido);
+    row.getCell(6).value = Number(item.entregado);
+    row.getCell(7).value = Number(item.faltante);
+
+    // Formato numérico
+    [5, 6, 7].forEach(c => { row.getCell(c).numFmt = '#,##0.00'; row.getCell(c).alignment = { horizontal: 'right' }; });
+    // Alineación texto
+    [1, 2, 3, 4].forEach(c => { row.getCell(c).alignment = { horizontal: 'left', vertical: 'middle' }; });
+
+    // Color condicional faltante
+    const faltante = Number(item.faltante);
+    if (faltante > 0) {
+      row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
+    } else {
+      row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
+    }
+
+    styleDataRow(ws, rowNum, TOTAL_COLS, idx % 2 === 1);
+  });
+
+  // 4. Fila de totales
+  const totalRow = dataStartRow + store.pendientes.length;
+  const lastDataRow = totalRow - 1;
+
+  // Merge A-D para "TOTALES"
+  ws.mergeCells(`A${totalRow}:D${totalRow}`);
+  ws.getCell(`A${totalRow}`).value = 'TOTALES';
+  ws.getCell(`A${totalRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
+  ws.getCell(`A${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
+
+  // Fórmulas SUM reales
+  ws.getCell(`E${totalRow}`).value = { formula: `SUM(E${dataStartRow}:E${lastDataRow})` };
+  ws.getCell(`F${totalRow}`).value = { formula: `SUM(F${dataStartRow}:F${lastDataRow})` };
+  ws.getCell(`G${totalRow}`).value = { formula: `SUM(G${dataStartRow}:G${lastDataRow})` };
+
+  // Estilo fila total
+  const tRow = ws.getRow(totalRow);
+  tRow.height = 26;
+  tRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    if (colNumber <= TOTAL_COLS) {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.totalBg } };
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
+      cell.border = thinBorder;
+      if (colNumber >= 5) {
+        cell.numFmt = '#,##0.00';
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+    }
+  });
+
+  // 5. Impresión
+  setupPrintArea(ws, TOTAL_COLS, totalRow);
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `Pendientes_Entrega_${new Date().toISOString().split('T')[0]}.xlsx`);
+  saveAs(blob, `MP_Pendientes_Entrega_${formatDate()}.xlsx`);
 };
 
+// ── Exportar Historial Detallado Excel ──
 const exportarHistorialExcel = async () => {
   if (store.historial.length === 0) return;
 
   const response = await store.exportarHistorialDetallado();
   if (!response.success || !response.data || response.data.length === 0) {
-      alert("No hay datos para exportar o ocurrió un error");
-      return;
+    alert("No hay datos para exportar o ocurrió un error");
+    return;
   }
 
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Historial Detallado');
+  workbook.creator = 'Madera Poltand ERP';
+  const ws = workbook.addWorksheet('Historial Detallado');
+  const TOTAL_COLS = 14;
 
-  worksheet.columns = [
-    { header: 'Cód. Ingreso', key: 'codigo_ingreso', width: 22 },
-    { header: 'Fecha', key: 'fecha_ingreso', width: 14 },
-    { header: 'Viaje', key: 'viaje', width: 15 },
-    { header: 'Vale', key: 'vale', width: 15 },
-    { header: 'Observación', key: 'observacion', width: 25 },
-    { header: 'Req.', key: 'codigo_req', width: 15 },
-    { header: 'Mina', key: 'mina', width: 20 },
-    { header: 'Artículo', key: 'articulo', width: 40 },
-    { header: 'Proveedor', key: 'proveedor', width: 25 },
-    { header: 'P. Prov', key: 'precio_proveedor', width: 12 },
-    { header: 'P. Mina', key: 'precio_mina', width: 12 },
-    { header: 'Pedido', key: 'pedido', width: 12 },
-    { header: 'En Viaje', key: 'cantidad_entregada', width: 12 },
-    { header: 'Faltante Act.', key: 'faltante', width: 14 }
+  // 1. Título
+  addTitleBlock(ws, 'MADERA POLTAND', 'Historial de Ingresos Detallado', TOTAL_COLS);
+
+  // 2. Cabecera en fila 5
+  const headers = [
+    'Cód. Ingreso', 'Fecha', 'Viaje', 'Vale', 'Obs.',
+    'Req.', 'Mina', 'Artículo', 'Proveedor',
+    'P.Prov', 'P.Mina', 'Pedido', 'En Viaje', 'Faltante'
   ];
-
-  const headerRow = worksheet.getRow(1);
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF198754' } }; // Verde para historial
-  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-
-  response.data.forEach(item => {
-    worksheet.addRow({
-      codigo_ingreso: item.codigo_ingreso,
-      fecha_ingreso: item.fecha_ingreso,
-      viaje: item.viaje || '',
-      vale: item.vale || '',
-      observacion: item.observacion || '',
-      codigo_req: item.codigo_req,
-      mina: item.mina || '',
-      articulo: item.articulo,
-      proveedor: item.proveedor,
-      precio_proveedor: Number(item.precio_proveedor || 0),
-      precio_mina: Number(item.precio_mina || 0),
-      pedido: Number(item.pedido || 0),
-      cantidad_entregada: Number(item.cantidad_entregada || 0),
-      faltante: Number(item.faltante || 0)
-    });
+  const widths = [18, 10, 9, 8, 14, 12, 12, 26, 16, 9, 9, 9, 9, 9];
+  headers.forEach((h, i) => {
+    ws.getColumn(i + 1).width = widths[i];
+    ws.getCell(5, i + 1).value = h;
   });
+  styleHeaderRow(ws, 5, TOTAL_COLS);
+
+  // 3. Datos desde fila 6
+  const dataStartRow = 6;
+  const numCols = [10, 11, 12, 13, 14]; // Columnas numéricas
+
+  response.data.forEach((item, idx) => {
+    const rowNum = dataStartRow + idx;
+    const row = ws.getRow(rowNum);
+    row.getCell(1).value = item.codigo_ingreso;
+    row.getCell(2).value = item.fecha_ingreso;
+    row.getCell(3).value = item.viaje || '';
+    row.getCell(4).value = item.vale || '';
+    row.getCell(5).value = item.observacion || '';
+    row.getCell(6).value = item.codigo_req;
+    row.getCell(7).value = item.mina || '';
+    row.getCell(8).value = item.articulo;
+    row.getCell(9).value = item.proveedor;
+    row.getCell(10).value = Number(item.precio_proveedor || 0);
+    row.getCell(11).value = Number(item.precio_mina || 0);
+    row.getCell(12).value = Number(item.pedido || 0);
+    row.getCell(13).value = Number(item.cantidad_entregada || 0);
+    row.getCell(14).value = Number(item.faltante || 0);
+
+    // Formato numérico y alineación
+    numCols.forEach(c => {
+      row.getCell(c).numFmt = '#,##0.00';
+      row.getCell(c).alignment = { horizontal: 'right', vertical: 'middle' };
+    });
+    for (let c = 1; c <= 9; c++) {
+      row.getCell(c).alignment = { horizontal: 'left', vertical: 'middle' };
+    }
+
+    // Color faltante
+    const faltante = Number(item.faltante || 0);
+    if (faltante > 0) {
+      row.getCell(14).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
+    } else if (faltante === 0) {
+      row.getCell(14).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
+    }
+
+    styleDataRow(ws, rowNum, TOTAL_COLS, idx % 2 === 1);
+  });
+
+  // 4. Fila de totales
+  const totalRow = dataStartRow + response.data.length;
+  const lastDataRow = totalRow - 1;
+
+  // Merge A-I para "TOTALES"
+  ws.mergeCells(`A${totalRow}:I${totalRow}`);
+  ws.getCell(`A${totalRow}`).value = 'TOTALES';
+  ws.getCell(`A${totalRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
+  ws.getCell(`A${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
+
+  // Fórmulas SUM solo para precios
+  ['J', 'K'].forEach(col => {
+    ws.getCell(`${col}${totalRow}`).value = { formula: `SUM(${col}${dataStartRow}:${col}${lastDataRow})` };
+  });
+
+  // Estilo fila total
+  const tRow = ws.getRow(totalRow);
+  tRow.height = 26;
+  tRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    if (colNumber <= TOTAL_COLS) {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.totalBg } };
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
+      cell.border = thinBorder;
+      if (colNumber >= 10) {
+        cell.numFmt = '#,##0.00';
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+    }
+  });
+
+  // 5. Impresión
+  setupPrintArea(ws, TOTAL_COLS, totalRow);
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `Historial_Ingresos_Detallado_${new Date().toISOString().split('T')[0]}.xlsx`);
+  saveAs(blob, `MP_Historial_Ingresos_${formatDate()}.xlsx`);
 };
 
 // ── Tab historial ──
