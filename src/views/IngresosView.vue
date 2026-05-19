@@ -590,7 +590,7 @@
 
     <!-- ====== MODAL: DETALLE DE INGRESO ====== -->
     <div class="modal fade" id="modalDetalleIngreso" tabindex="-1" ref="modalDetalleRef">
-      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header d-flex flex-column align-items-start position-relative pb-3">
             <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
@@ -637,10 +637,12 @@
                     <th>Req.</th>
                     <th>Artículo</th>
                     <th>Proveedor</th>
-                    <th class="text-end" style="color:#2563eb;">P. Prov</th>
-                    <th class="text-end" style="color:#16a34a;">P. Mina</th>
+                    <th class="text-end text-muted" style="font-size:0.75rem;">P. Prov</th>
+                    <th class="text-end" style="color:#2563eb;">T. Prov</th>
+                    <th class="text-end text-muted" style="font-size:0.75rem;">P. Mina</th>
+                    <th class="text-end" style="color:#16a34a;">T. Mina</th>
                     <th class="text-end">Pedido</th>
-                    <th class="text-end" title="Entregado en este viaje específico">En Este Viaje</th>
+                    <th class="text-end" title="Entregado en este viaje específico">Viaje</th>
                     <th class="text-end" title="Lo que falta o sobra entregar en total">Faltante</th>
                   </tr>
                 </thead>
@@ -652,8 +654,10 @@
                     </td>
                     <td style="font-size:0.85rem;">{{ d.articulo }}</td>
                     <td class="text-muted" style="font-size:0.85rem;">{{ d.proveedor }}</td>
-                    <td class="text-end" style="color:#2563eb;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
-                    <td class="text-end" style="color:#16a34a;">{{ Number(d.precio_mina).toFixed(2) }}</td>
+                    <td class="text-end text-muted" style="font-size:0.75rem;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
+                    <td class="text-end fw-semibold" style="color:#2563eb;">{{ (Number(d.precio_proveedor) * Number(d.cantidad_entregada)).toFixed(2) }}</td>
+                    <td class="text-end text-muted" style="font-size:0.75rem;">{{ Number(d.precio_mina).toFixed(2) }}</td>
+                    <td class="text-end fw-semibold" style="color:#16a34a;">{{ (Number(d.precio_mina) * Number(d.cantidad_entregada)).toFixed(2) }}</td>
                     <td class="text-end fw-medium">{{ d.pedido || '—' }}</td>
                     <td class="text-end fw-bold text-success">{{ Number(d.cantidad_entregada).toFixed(2) }}</td>
                     <td class="text-end fw-semibold">
@@ -674,7 +678,15 @@
                 </tbody>
                 <tfoot class="table-light">
                   <tr>
-                    <td colspan="6" class="text-end fw-semibold" style="font-size:0.85rem;">Total items en este viaje:</td>
+                    <td colspan="4" class="text-end fw-semibold" style="font-size:0.85rem; text-transform:uppercase;">Costo total del viaje:</td>
+                    <td class="text-end fw-bold" style="color:#2563eb;">
+                      S/ {{ store.detalleActual.reduce((s, d) => s + (Number(d.cantidad_entregada) * Number(d.precio_proveedor)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                    </td>
+                    <td></td>
+                    <td class="text-end fw-bold" style="color:#16a34a;">
+                      S/ {{ store.detalleActual.reduce((s, d) => s + (Number(d.cantidad_entregada) * Number(d.precio_mina)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                    </td>
+                    <td class="text-end fw-semibold" style="font-size:0.85rem;">Físico total:</td>
                     <td class="text-end fw-bold text-success">
                       {{ store.detalleActual.reduce((s, d) => s + Number(d.cantidad_entregada), 0).toFixed(2) }}
                     </td>
