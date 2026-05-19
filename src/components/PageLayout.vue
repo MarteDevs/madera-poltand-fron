@@ -7,19 +7,21 @@
         <div class="d-flex align-items-center gap-3">
           <!-- Botón hamburguesa visible solo en mobile -->
           <button 
-            class="btn btn-light d-lg-none p-2 lh-1 border" 
+            class="topbar-menu-btn d-lg-none" 
             @click="triggerSidebar"
             aria-label="Menu"
           >
-            <i class="bi bi-list fs-4"></i>
+            <i class="bi bi-list"></i>
           </button>
 
           <div>
-            <h1 class="h6 fw-semibold mb-0 text-dark">{{ title }}</h1>
-            <nav aria-label="breadcrumb" class="d-none d-sm-block" style="font-size:0.75rem;" v-if="breadcrumb">
-              <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item text-muted">Madera Poltand</li>
-                <li class="breadcrumb-item active">{{ title }}</li>
+            <h1 class="topbar-title">{{ title }}</h1>
+            <nav aria-label="breadcrumb" class="d-none d-sm-block" v-if="breadcrumb">
+              <ol class="breadcrumb mb-0" style="font-size:0.72rem;">
+                <li class="breadcrumb-item text-muted">
+                  <i class="bi bi-house-fill me-1"></i>Madera Poltand
+                </li>
+                <li class="breadcrumb-item active fw-medium">{{ title }}</li>
               </ol>
             </nav>
           </div>
@@ -29,7 +31,7 @@
         </div>
       </div>
 
-      <!-- Content -->
+      <!-- Content with animation -->
       <div class="mp-content">
         <slot></slot>
       </div>
@@ -53,3 +55,33 @@ const triggerSidebar = () => {
   window.dispatchEvent(new CustomEvent('toggle-sidebar'));
 };
 </script>
+
+<style scoped>
+.topbar-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.topbar-menu-btn {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.3rem;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+.topbar-menu-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: scale(1.05);
+}
+</style>
