@@ -172,19 +172,21 @@
                 <th>Vale</th>
                 <th>Mina(s)</th>
                 <th class="text-center">Ítems</th>
-                <th class="text-end">Total Entregado</th>
+                <th class="text-end">Físico Entregado</th>
+                <th class="text-end" style="color:#2563eb;">Total Prov.</th>
+                <th class="text-end" style="color:#16a34a;">Total Mina</th>
                 <th>Observación</th>
                 <th class="text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="store.cargandoHistorial">
-                <td colspan="8" class="text-center py-5 text-muted">
+                <td colspan="11" class="text-center py-5 text-muted">
                   <span class="spinner-border spinner-border-sm me-2"></span>Cargando historial...
                 </td>
               </tr>
               <tr v-else-if="store.historial.length === 0">
-                <td colspan="8" class="text-center py-5 text-muted">
+                <td colspan="11" class="text-center py-5 text-muted">
                   <i class="bi bi-inbox fs-4 d-block mb-2"></i>No hay ingresos registrados aún.
                 </td>
               </tr>
@@ -207,6 +209,8 @@
                   <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">{{ ing.total_items }}</span>
                 </td>
                 <td class="text-end fw-semibold text-success">{{ Number(ing.total_entregado).toFixed(2) }}</td>
+                <td class="text-end fw-semibold" style="color:#2563eb;">S/ {{ Number(ing.total_proveedor).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}</td>
+                <td class="text-end fw-semibold" style="color:#16a34a;">S/ {{ Number(ing.total_mina).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}</td>
                 <td>
                   <span v-if="ing.observacion" class="text-muted" style="font-size:0.82rem;">{{ ing.observacion }}</span>
                   <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
@@ -228,6 +232,21 @@
                 </td>
               </tr>
             </tbody>
+            <tfoot v-if="store.historial.length > 0" class="table-light">
+              <tr>
+                <td colspan="6" class="text-end fw-bold" style="font-size:0.82rem;">TOTAL GENERAL:</td>
+                <td class="text-end fw-bold text-success">
+                  {{ store.historial.reduce((s, ing) => s + Number(ing.total_entregado), 0).toFixed(2) }}
+                </td>
+                <td class="text-end fw-bold" style="color:#2563eb;">
+                  S/ {{ store.historial.reduce((s, ing) => s + Number(ing.total_proveedor), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                </td>
+                <td class="text-end fw-bold" style="color:#16a34a;">
+                  S/ {{ store.historial.reduce((s, ing) => s + Number(ing.total_mina), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
