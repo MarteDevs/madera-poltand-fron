@@ -74,6 +74,15 @@ export const useRequerimientosStore = defineStore('requerimientos', {
                 console.error('Error obteniendo siguiente código:', err.response?.data || err.message);
                 return null;
             }
+        },
+        async forzarCierreRequerimiento(id) {
+            try {
+                await api.put(`/requerimientos/${id}/forzar-cierre`);
+                await this.cargarHistorial();
+                return { success: true };
+            } catch (err) {
+                return { success: false, mensaje: err.response?.data?.mensaje || 'Error al forzar cierre' };
+            }
         }
     }
 });

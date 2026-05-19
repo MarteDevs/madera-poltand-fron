@@ -347,7 +347,16 @@
               </table>
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer d-flex justify-content-between">
+            <button 
+              v-if="reqSeleccionado?.estado === 'PENDIENTE' || reqSeleccionado?.estado === 'PARCIAL'" 
+              class="btn btn-outline-success fw-medium" 
+              @click="confirmarForzarCierre"
+              title="Cancelar los saldos pendientes y dar por finalizado"
+            >
+              <i class="bi bi-check-circle me-1"></i> Dar por Completado
+            </button>
+            <div v-else></div>
             <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
           </div>
         </div>
@@ -872,6 +881,39 @@ const verDetalles = async (r) => {
   bsModalDetalles.show();
   detallesActuales.value = await store.getDetalles(r.id);
   cargandoDetalles.value = false;
+};
+
+const confirmarForzarCierre = async () => {
+  const result = await Swal.fire({
+    title: '<span class="fw-bold">¿Dar por Completado?</span>',
+    html: `Los ítems que faltan entregar de <strong>${reqSeleccionado.value?.codigo_req}</strong> ya no aparecerán en pendientes de ingreso.<br><br><span class="text-success fw-bold">Esta acción cerrará el requerimiento de forma definitiva.</span>`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#16a34a',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: '<i class="bi bi-check-circle me-1"></i> Sí, Completar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    customClass: {
+      popup: 'rounded-4 border-0 shadow',
+      confirmButton: 'rounded-pill px-4',
+      cancelButton: 'rounded-pill px-4'
+    }
+  });
+
+  if (result.isConfirmed) {
+    toastStore.addToast('Forzando cierre...', 'info');
+    const res = await store.forzarCierreRequerimiento(reqSeleccionado.value.id);
+    if (res.success) {
+      toastStore.addToast(`Requerimiento cerrado exitosamente`, 'success');
+      if (reqSeleccionado.value) {
+        reqSeleccionado.value.estado = 'COMPLETADO';
+      }
+      setTimeout(() => bsModalDetalles.hide(), 500);
+    } else {
+      toastStore.addToast(res.mensaje, 'danger');
+    }
+  }
 };
 
 const badgeClass = (estado) => {
