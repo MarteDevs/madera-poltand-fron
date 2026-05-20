@@ -1182,7 +1182,7 @@ const exportarHistorialExcel = async () => {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Madera Poltand ERP';
   const ws = workbook.addWorksheet('Historial Detallado');
-  const TOTAL_COLS = 14;
+  const TOTAL_COLS = 16;
 
   // 1. Título
   addTitleBlock(ws, 'MADERA POLTAND', 'Historial de Ingresos Detallado', TOTAL_COLS);
@@ -1191,9 +1191,9 @@ const exportarHistorialExcel = async () => {
   const headers = [
     'Cód. Ingreso', 'Fecha', 'Viaje', 'Vale', 'Obs.',
     'Req.', 'Mina', 'Artículo', 'Proveedor',
-    'P.Prov', 'P.Mina', 'Pedido', 'En Viaje', 'Faltante'
+    'P.Prov', 'T.Prov', 'P.Mina', 'T.Mina', 'Pedido', 'En Viaje', 'Faltante'
   ];
-  const widths = [18, 10, 9, 8, 14, 12, 12, 26, 16, 9, 9, 9, 9, 9];
+  const widths = [18, 10, 9, 8, 14, 12, 12, 26, 16, 9, 10, 9, 10, 9, 9, 9];
   headers.forEach((h, i) => {
     ws.getColumn(i + 1).width = widths[i];
     ws.getCell(5, i + 1).value = h;
@@ -1202,11 +1202,16 @@ const exportarHistorialExcel = async () => {
 
   // 3. Datos desde fila 6
   const dataStartRow = 6;
-  const numCols = [10, 11, 12, 13, 14]; // Columnas numéricas
+  const numCols = [10, 11, 12, 13, 14, 15, 16]; // Columnas numéricas
 
   response.data.forEach((item, idx) => {
     const rowNum = dataStartRow + idx;
     const row = ws.getRow(rowNum);
+    
+    const precioProv = Number(item.precio_proveedor || 0);
+    const precioMina = Number(item.precio_mina || 0);
+    const cantEntregada = Number(item.cantidad_entregada || 0);
+
     row.getCell(1).value = item.codigo_ingreso;
     row.getCell(2).value = item.fecha_ingreso;
     row.getCell(3).value = item.viaje || '';
@@ -1216,11 +1221,13 @@ const exportarHistorialExcel = async () => {
     row.getCell(7).value = item.mina || '';
     row.getCell(8).value = item.articulo;
     row.getCell(9).value = item.proveedor;
-    row.getCell(10).value = Number(item.precio_proveedor || 0);
-    row.getCell(11).value = Number(item.precio_mina || 0);
-    row.getCell(12).value = Number(item.pedido || 0);
-    row.getCell(13).value = Number(item.cantidad_entregada || 0);
-    row.getCell(14).value = Number(item.faltante || 0);
+    row.getCell(10).value = precioProv;
+    row.getCell(11).value = precioProv * cantEntregada; // T.Prov
+    row.getCell(12).value = precioMina;
+    row.getCell(13).value = precioMina * cantEntregada; // T.Mina
+    row.getCell(14).value = Number(item.pedido || 0);
+    row.getCell(15).value = cantEntregada;
+    row.getCell(16).value = Number(item.faltante || 0);
 
     // Formato numérico y alineación
     numCols.forEach(c => {
@@ -1234,42 +1241,30 @@ const exportarHistorialExcel = async () => {
     // Color faltante
     const faltante = Number(item.faltante || 0);
     if (faltante > 0) {
-      row.getCell(14).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
+      row.getCell(16).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
     } else if (faltante === 0) {
-      row.getCell(14).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
+      row.getCell(16).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
     }
 
     styleDataRow(ws, rowNum, TOTAL_COLS, idx % 2 === 1);
+    
+    // Resaltar las nuevas columnas calculadas con un color de fondo suave
+    row.getCell(11).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Azul muy claro
+    row.getCell(13).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } }; // Verde muy claro
   });
 
   // 4. Fila de totales
   const totalRow = dataStartRow + response.data.length;
   const lastDataRow = totalRow - 1;
 
-  // Merge A-I para "TOTALES"
-  ws.mergeCells(`A${totalRow}:I${totalRow}`);
-  ws.getCell(`A${totalRow}`).value = 'TOTALES';
-  ws.getCell(`A${totalRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
-  ws.getCell(`A${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-
-  // Fórmulas SUM solo para precios
-  ['J', 'K'].forEach(col => {
-    ws.getCell(`${col}${totalRow}`).value = { formula: `SUM(${col}${dataStartRow}:${col}${lastDataRow})` };
-  });
-
-  // Estilo fila total
-  const tRow = ws.getRow(totalRow);
-  tRow.height = 26;
-  tRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    if (colNumber <= TOTAL_COLS) {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.totalBg } };
-      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
-      cell.border = thinBorder;
-      if (colNumber >= 10) {
-        cell.numFmt = '#,##0.00';
-        cell.alignment = { horizontal: 'right', vertical: 'middle' };
-      }
-    }
+  // Fórmulas SUM solo para los totales calculados
+  ['K', 'M'].forEach(col => { // K = T.Prov, M = T.Mina
+    const cell = ws.getCell(`${col}${totalRow}`);
+    cell.value = { formula: `SUM(${col}${dataStartRow}:${col}${lastDataRow})` };
+    cell.numFmt = '#,##0.00';
+    cell.font = { name: 'Calibri', size: 11, bold: true };
+    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+    cell.border = { top: { style: 'double', color: { argb: COLORS.borderColor } } };
   });
 
   // 5. Impresión
