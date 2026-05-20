@@ -743,7 +743,7 @@ const refCantidadExtra = ref([]);
 
 // Opciones de viaje para el SearchableSelect
 const opcionesViaje = [
-  ...Array.from({ length: 13 }, (_, i) => ({ id: `${i + 1}-VIAJE`, nombre: `${i + 1}-VIAJE` })),
+  ...Array.from({ length: 13 }, (_, i) => ({ id: `${i + 1}`, nombre: `${i + 1}` })),
   { id: 'DEPOSITO', nombre: 'DEPOSITO' }
 ];
 
