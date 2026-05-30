@@ -26,7 +26,57 @@
               <option :value="100">100</option>
             </select>
           </div>
-          <span class="text-muted" style="font-size:0.8rem;">{{ store.historial.length }} registros</span>
+          <span class="text-muted" style="font-size:0.8rem;">
+            {{ historialFiltrado.length }} de {{ store.historial.length }} registros
+          </span>
+        </div>
+      </div>
+
+      <!-- Barra de filtros -->
+      <div class="req-filter-bar">
+        <div 
+          class="req-filter-pill" 
+          :class="{ 'active-todos': filtroEstado === 'TODOS' }" 
+          @click="filtroEstado = 'TODOS'"
+        >
+          Todos <span class="pill-count">{{ countTodos }}</span>
+        </div>
+        <div 
+          class="req-filter-pill" 
+          :class="{ 'active-pendiente': filtroEstado === 'PENDIENTE' }" 
+          @click="filtroEstado = 'PENDIENTE'"
+        >
+          Pendientes <span class="pill-count">{{ countPendiente }}</span>
+        </div>
+        <div 
+          class="req-filter-pill" 
+          :class="{ 'active-parcial': filtroEstado === 'PARCIAL' }" 
+          @click="filtroEstado = 'PARCIAL'"
+        >
+          Parciales <span class="pill-count">{{ countParcial }}</span>
+        </div>
+        <div 
+          class="req-filter-pill" 
+          :class="{ 'active-completado': filtroEstado === 'COMPLETADO' }" 
+          @click="filtroEstado = 'COMPLETADO'"
+        >
+          Completados <span class="pill-count">{{ countCompletado }}</span>
+        </div>
+        <div 
+          class="req-filter-pill" 
+          :class="{ 'active-cancelado': filtroEstado === 'CANCELADO' }" 
+          @click="filtroEstado = 'CANCELADO'"
+        >
+          Cancelados <span class="pill-count">{{ countCancelado }}</span>
+        </div>
+
+        <div class="req-search-box">
+          <i class="bi bi-search"></i>
+          <input 
+            type="text" 
+            v-model="buscarTexto" 
+            placeholder="Buscar por código, mina, sup..." 
+          />
         </div>
       </div>
 
@@ -87,14 +137,14 @@
               </td>
             </tr>
           </tbody>
-          <tfoot v-if="store.historial.length > 0" class="table-light">
+          <tfoot v-if="historialFiltrado.length > 0" class="table-light">
             <tr>
-              <td colspan="5" class="text-end fw-bold" style="font-size:0.82rem;">TOTAL GENERAL:</td>
+              <td colspan="5" class="text-end fw-bold" style="font-size:0.82rem;">{{ tituloTotal }}</td>
               <td class="text-end fw-bold" style="color:#2563eb;">
-                S/ {{ store.historial.reduce((s, r) => s + Number(r.total_proveedor), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                S/ {{ totalProveedorFiltrado.toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
               </td>
               <td class="text-end fw-bold" style="color:#16a34a;">
-                S/ {{ store.historial.reduce((s, r) => s + Number(r.total_mina), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                S/ {{ totalMinaFiltrado.toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
               </td>
               <td></td>
             </tr>
@@ -105,7 +155,7 @@
       <!-- Paginación -->
       <div v-if="totalPaginas > 1" class="px-4 py-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-3 bg-light bg-opacity-50">
         <div class="text-muted" style="font-size:0.8rem;">
-          Mostrando {{ (paginaActual - 1) * porPagina + 1 }} - {{ Math.min(paginaActual * porPagina, store.historial.length) }} de {{ store.historial.length }}
+          Mostrando {{ historialFiltrado.length > 0 ? (paginaActual - 1) * porPagina + 1 : 0 }} - {{ Math.min(paginaActual * porPagina, historialFiltrado.length) }} de {{ historialFiltrado.length }}
         </div>
         <nav aria-label="Paginación de requerimientos">
           <ul class="pagination pagination-sm mb-0">
@@ -399,15 +449,51 @@ const siguienteCodigoReq = ref('');
 const modoEdicion = ref(false);
 const idRequerimientoEditar = ref(null);
 
+// ---- Filtros y Búsqueda ----
+const filtroEstado = ref('TODOS');
+const buscarTexto = ref('');
+
+const countTodos = computed(() => store.historial.length);
+const countPendiente = computed(() => store.historial.filter(r => r.estado === 'PENDIENTE').length);
+const countParcial = computed(() => store.historial.filter(r => r.estado === 'PARCIAL').length);
+const countCompletado = computed(() => store.historial.filter(r => r.estado === 'COMPLETADO').length);
+const countCancelado = computed(() => store.historial.filter(r => r.estado === 'CANCELADO').length);
+
+const historialFiltrado = computed(() => {
+  return store.historial.filter(r => {
+    const matchEstado = filtroEstado.value === 'TODOS' || r.estado === filtroEstado.value;
+    
+    const text = buscarTexto.value.toLowerCase().trim();
+    const matchTexto = !text || 
+      r.codigo_req.toLowerCase().includes(text) ||
+      r.mina.toLowerCase().includes(text) ||
+      (r.supervisor && r.supervisor.toLowerCase().includes(text));
+      
+    return matchEstado && matchTexto;
+  });
+});
+
+const totalProveedorFiltrado = computed(() => {
+  return historialFiltrado.value.reduce((s, r) => s + Number(r.total_proveedor || 0), 0);
+});
+
+const totalMinaFiltrado = computed(() => {
+  return historialFiltrado.value.reduce((s, r) => s + Number(r.total_mina || 0), 0);
+});
+
+const tituloTotal = computed(() => {
+  return (filtroEstado.value !== 'TODOS' || buscarTexto.value.trim() !== '') ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:';
+});
+
 // ---- Paginación ----
 const paginaActual = ref(1);
 const porPagina = ref(25);
 
-const totalPaginas = computed(() => Math.ceil(store.historial.length / porPagina.value));
+const totalPaginas = computed(() => Math.ceil(historialFiltrado.value.length / porPagina.value));
 
 const historialPaginado = computed(() => {
   const inicio = (paginaActual.value - 1) * porPagina.value;
-  return store.historial.slice(inicio, inicio + porPagina.value);
+  return historialFiltrado.value.slice(inicio, inicio + porPagina.value);
 });
 
 const paginasVisibles = computed(() => {
@@ -420,9 +506,9 @@ const paginasVisibles = computed(() => {
   return [1, '...', actual - 1, actual, actual + 1, '...', total];
 });
 
-// Resetear página al cambiar historial o tamaño de página
+// Resetear página al cambiar filtros, historial o tamaño de página
+watch([filtroEstado, buscarTexto, porPagina], () => { paginaActual.value = 1; });
 watch(() => store.historial.length, () => { paginaActual.value = 1; });
-watch(porPagina, () => { paginaActual.value = 1; });
 
 // ---- Refs para navegación por teclado ----
 const fechaRef      = ref(null);
@@ -954,8 +1040,36 @@ const badgeClass = (estado) => {
   }
 }
 
-.badge-pendiente { background-color: #f3f4f6; color: #374151; }
-.badge-completado { background-color: #dcfce7; color: #166534; }
-.badge-parcial { background-color: #fef9c3; color: #854d0e; }
-.badge-cancelado { background-color: #fee2e2; color: #991b1b; }
+.badge-pendiente {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+}
+.badge-completado {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #14532d;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+}
+.badge-parcial {
+  background: linear-gradient(135deg, #fff7ed, #fed7aa);
+  color: #9a3412;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+}
+.badge-cancelado {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #7f1d1d;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+}
 </style>

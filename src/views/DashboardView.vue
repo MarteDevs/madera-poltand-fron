@@ -7,7 +7,15 @@
           <h2 class="welcome-title">
             <span class="welcome-wave">👋</span> ¡Bienvenido!
           </h2>
-          <p class="welcome-sub">Resumen operativo del sistema Madera Poltand</p>
+          <p class="welcome-sub">
+            <template v-if="!cargando">
+              <span v-if="pendientesCount > 0" style="color:#fbbf24;">
+                {{ pendientesCount }} requerimiento{{ pendientesCount !== 1 ? 's' : '' }} pendiente{{ pendientesCount !== 1 ? 's' : '' }} de entrega
+              </span>
+              <span v-else style="color:#34d399;">✓ Todo al día — sin entregas pendientes</span>
+            </template>
+            <template v-else>Resumen operativo del sistema Madera Poltand</template>
+          </p>
         </div>
         <div class="welcome-date">
           <i class="bi bi-calendar3 me-2"></i>
@@ -16,8 +24,8 @@
       </div>
     </div>
 
-    <!-- Stats row -->
-    <div class="row g-3 mb-4">
+    <!-- Stats row — 4 contadores operativos -->
+    <div class="row g-3 mb-3">
       <div class="col-sm-6 col-xl-3" v-for="(stat, idx) in stats" :key="stat.label">
         <div class="stat-card d-flex align-items-center gap-3" :style="{ animationDelay: (idx * 0.08) + 's' }">
           <div class="stat-icon" :style="{ background: stat.bg }">
@@ -28,6 +36,77 @@
             <div class="stat-value">
               <span v-if="cargando" class="skeleton" style="width:40px;height:28px;display:inline-block;"></span>
               <span v-else>{{ stat.valor }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs financieros + mini gráfico -->
+    <div class="row g-3 mb-4">
+      <!-- KPI: Total S/ Proveedor pendiente -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="kpi-finance-card" style="animation-delay:0.32s;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="kfi-icon" style="background:#eff6ff;">
+              <i class="bi bi-building" style="color:#3b82f6;"></i>
+            </div>
+            <span class="badge" style="background:#eff6ff;color:#3b82f6;font-size:0.65rem;font-weight:700;border-radius:10px;padding:3px 8px;">ACTIVOS</span>
+          </div>
+          <div class="kfi-amount" style="color:#2563eb;">
+            <span v-if="cargando" class="skeleton" style="width:80px;height:22px;display:inline-block;"></span>
+            <span v-else>S/ {{ totalProveedorPendiente }}</span>
+          </div>
+          <div class="kfi-label" style="color:#3b82f6;">Total Proveedor</div>
+          <div class="kfi-sub">Por entregar en reqs activos</div>
+        </div>
+      </div>
+
+      <!-- KPI: Total S/ Mina pendiente -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="kpi-finance-card" style="animation-delay:0.40s;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="kfi-icon" style="background:#f0fdf4;">
+              <i class="bi bi-gem" style="color:#16a34a;"></i>
+            </div>
+            <span class="badge" style="background:#f0fdf4;color:#16a34a;font-size:0.65rem;font-weight:700;border-radius:10px;padding:3px 8px;">ACTIVOS</span>
+          </div>
+          <div class="kfi-amount" style="color:#16a34a;">
+            <span v-if="cargando" class="skeleton" style="width:80px;height:22px;display:inline-block;"></span>
+            <span v-else>S/ {{ totalMinaPendiente }}</span>
+          </div>
+          <div class="kfi-label" style="color:#16a34a;">Total Mina</div>
+          <div class="kfi-sub">Por cobrar en reqs activos</div>
+        </div>
+      </div>
+
+      <!-- Mini gráfico de distribución de estados -->
+      <div class="col-xl-6">
+        <div class="mp-card p-4" style="animation-delay:0.48s;">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="card-header-icon">
+              <i class="bi bi-bar-chart-fill"></i>
+            </div>
+            <h6 class="mb-0 fw-semibold">Distribución de Estados</h6>
+            <span class="ms-auto text-muted" style="font-size:0.75rem;">{{ reqStore.historial.length }} total</span>
+          </div>
+          <div v-if="cargando" class="mp-mini-chart">
+            <div v-for="i in 3" :key="i" class="mp-chart-row">
+              <span class="skeleton mp-chart-label" style="height:12px;border-radius:4px;"></span>
+              <div class="mp-chart-bar-bg"><div class="mp-chart-bar skeleton" style="width:60%;"></div></div>
+              <span class="skeleton" style="width:22px;height:12px;border-radius:4px;"></span>
+            </div>
+          </div>
+          <div v-else-if="chartData.length === 0" class="text-center text-muted py-2" style="font-size:0.85rem;">
+            Sin datos aún
+          </div>
+          <div v-else class="mp-mini-chart">
+            <div class="mp-chart-row" v-for="item in chartData" :key="item.label">
+              <span class="mp-chart-label">{{ item.label }}</span>
+              <div class="mp-chart-bar-bg">
+                <div class="mp-chart-bar" :style="{ width: item.pct + '%', background: item.color }"></div>
+              </div>
+              <span class="mp-chart-num" :style="{ color: item.color }">{{ item.count }}</span>
             </div>
           </div>
         </div>
@@ -120,8 +199,38 @@ onMounted(async () => {
 const ultimos = computed(() => reqStore.historial.slice(0, 8));
 
 const pendientesCount = computed(() =>
-  reqStore.historial.filter(r => r.estado === 'PENDIENTE').length
+  reqStore.historial.filter(r => r.estado === 'PENDIENTE' || r.estado === 'PARCIAL').length
 );
+
+// KPIs financieros — solo reqs activos (PENDIENTE + PARCIAL)
+const reqsActivos = computed(() =>
+  reqStore.historial.filter(r => r.estado === 'PENDIENTE' || r.estado === 'PARCIAL')
+);
+
+const totalProveedorPendiente = computed(() => {
+  const t = reqsActivos.value.reduce((s, r) => s + Number(r.total_proveedor || 0), 0);
+  return t.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+});
+
+const totalMinaPendiente = computed(() => {
+  const t = reqsActivos.value.reduce((s, r) => s + Number(r.total_mina || 0), 0);
+  return t.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+});
+
+// Mini gráfico de distribución de estados
+const chartData = computed(() => {
+  const total = reqStore.historial.length || 1;
+  const estados = [
+    { label: 'Pendiente',  key: 'PENDIENTE',  color: '#f59e0b' },
+    { label: 'Parcial',    key: 'PARCIAL',    color: '#f97316' },
+    { label: 'Completado', key: 'COMPLETADO', color: '#22c55e' },
+    { label: 'Cancelado',  key: 'CANCELADO',  color: '#ef4444' },
+  ];
+  return estados.map(e => {
+    const count = reqStore.historial.filter(r => r.estado === e.key).length;
+    return { ...e, count, pct: Math.round((count / total) * 100) };
+  }).filter(e => e.count > 0);
+});
 
 const stats = computed(() => [
   {
@@ -155,7 +264,12 @@ const stats = computed(() => [
 ]);
 
 const badgeClass = (estado) => {
-  const map = { PENDIENTE: 'badge-pendiente', COMPLETADO: 'badge-completado', CANCELADO: 'badge-cancelado' };
+  const map = {
+    PENDIENTE:  'badge-pendiente',
+    COMPLETADO: 'badge-completado',
+    CANCELADO:  'badge-cancelado',
+    PARCIAL:    'badge-parcial'
+  };
   return map[estado] || 'badge-pendiente';
 };
 </script>
