@@ -70,6 +70,24 @@
           Cancelados <span class="pill-count">{{ countCancelado }}</span>
         </div>
 
+        <!-- Filtros de fecha (Mes / Año) -->
+        <div class="d-flex align-items-center gap-2 ms-2">
+          <select v-model="filtroMes" class="form-select form-select-sm" style="width: 140px; border-radius: 20px; border: 1.5px solid var(--mp-border);">
+            <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">
+              {{ m.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <select v-model="filtroAnio" class="form-select form-select-sm" style="width: 110px; border-radius: 20px; border: 1.5px solid var(--mp-border);">
+            <option value="">Todos los años</option>
+            <option v-for="a in aniosDisponibles" :key="a" :value="a">
+              {{ a }}
+            </option>
+          </select>
+        </div>
+
         <div class="req-search-box">
           <i class="bi bi-search"></i>
           <input 
@@ -452,12 +470,74 @@ const idRequerimientoEditar = ref(null);
 // ---- Filtros y Búsqueda ----
 const filtroEstado = ref('TODOS');
 const buscarTexto = ref('');
+const filtroMes = ref('');
+const filtroAnio = ref('');
 
-const countTodos = computed(() => store.historial.length);
-const countPendiente = computed(() => store.historial.filter(r => r.estado === 'PENDIENTE').length);
-const countParcial = computed(() => store.historial.filter(r => r.estado === 'PARCIAL').length);
-const countCompletado = computed(() => store.historial.filter(r => r.estado === 'COMPLETADO').length);
-const countCancelado = computed(() => store.historial.filter(r => r.estado === 'CANCELADO').length);
+const mesesOpciones = [
+  { value: '', label: 'Todos los meses' },
+  { value: '01', label: 'Enero' },
+  { value: '02', label: 'Febrero' },
+  { value: '03', label: 'Marzo' },
+  { value: '04', label: 'Abril' },
+  { value: '05', label: 'Mayo' },
+  { value: '06', label: 'Junio' },
+  { value: '07', label: 'Julio' },
+  { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Septiembre' },
+  { value: '10', label: 'Octubre' },
+  { value: '11', label: 'Noviembre' },
+  { value: '12', label: 'Diciembre' }
+];
+
+const aniosDisponibles = computed(() => {
+  const anios = store.historial
+    .map(r => {
+      if (!r.fecha) return null;
+      return r.fecha.substring(0, 4);
+    })
+    .filter(Boolean);
+  return [...new Set(anios)].sort((a, b) => b - a);
+});
+
+const countTodos = computed(() => {
+  return store.historial.filter(r => {
+    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
+    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
+    return matchMes && matchAnio;
+  }).length;
+});
+const countPendiente = computed(() => {
+  return store.historial.filter(r => {
+    if (r.estado !== 'PENDIENTE') return false;
+    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
+    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
+    return matchMes && matchAnio;
+  }).length;
+});
+const countParcial = computed(() => {
+  return store.historial.filter(r => {
+    if (r.estado !== 'PARCIAL') return false;
+    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
+    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
+    return matchMes && matchAnio;
+  }).length;
+});
+const countCompletado = computed(() => {
+  return store.historial.filter(r => {
+    if (r.estado !== 'COMPLETADO') return false;
+    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
+    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
+    return matchMes && matchAnio;
+  }).length;
+});
+const countCancelado = computed(() => {
+  return store.historial.filter(r => {
+    if (r.estado !== 'CANCELADO') return false;
+    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
+    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
+    return matchMes && matchAnio;
+  }).length;
+});
 
 const historialFiltrado = computed(() => {
   return store.historial.filter(r => {
@@ -469,7 +549,10 @@ const historialFiltrado = computed(() => {
       r.mina.toLowerCase().includes(text) ||
       (r.supervisor && r.supervisor.toLowerCase().includes(text));
       
-    return matchEstado && matchTexto;
+    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
+    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
+
+    return matchEstado && matchTexto && matchMes && matchAnio;
   });
 });
 
@@ -482,7 +565,7 @@ const totalMinaFiltrado = computed(() => {
 });
 
 const tituloTotal = computed(() => {
-  return (filtroEstado.value !== 'TODOS' || buscarTexto.value.trim() !== '') ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:';
+  return (filtroEstado.value !== 'TODOS' || buscarTexto.value.trim() !== '' || filtroMes.value !== '' || filtroAnio.value !== '') ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:';
 });
 
 // ---- Paginación ----
@@ -507,7 +590,7 @@ const paginasVisibles = computed(() => {
 });
 
 // Resetear página al cambiar filtros, historial o tamaño de página
-watch([filtroEstado, buscarTexto, porPagina], () => { paginaActual.value = 1; });
+watch([filtroEstado, buscarTexto, porPagina, filtroMes, filtroAnio], () => { paginaActual.value = 1; });
 watch(() => store.historial.length, () => { paginaActual.value = 1; });
 
 // ---- Refs para navegación por teclado ----

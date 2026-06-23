@@ -102,7 +102,7 @@
 
       <!-- Filtros del historial -->
       <div class="row g-2 mb-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-white border-end-0">
               <i class="bi bi-search text-muted"></i>
@@ -112,7 +112,7 @@
               v-model="filtroHistorialBuscar" />
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <select v-model="filtroHistorialMina" class="form-select form-select-sm">
             <option value="">— Todas las Minas —</option>
             <option v-for="m in catalogStore.minas" :key="m.id" :value="m.nombre">
@@ -120,7 +120,7 @@
             </option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <select v-model="filtroHistorialViaje" class="form-select form-select-sm">
             <option value="">— Todos los Viajes —</option>
             <option v-for="v in uniqueViajesHistorial" :key="v" :value="v">
@@ -129,10 +129,26 @@
           </select>
         </div>
         <div class="col-md-2">
+          <select v-model="filtroHistorialMes" class="form-select form-select-sm">
+            <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">
+              {{ m.label }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select v-model="filtroHistorialAnio" class="form-select form-select-sm">
+            <option value="">— Todos los Años —</option>
+            <option v-for="a in aniosDisponiblesHistorial" :key="a" :value="a">
+              {{ a }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-1">
           <button class="btn btn-sm btn-outline-secondary w-100"
             @click="limpiarFiltrosHistorial"
-            :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje">
-            <i class="bi bi-x-lg me-1"></i> Limpiar
+            :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje && !filtroHistorialMes && !filtroHistorialAnio"
+            title="Limpiar filtros">
+            <i class="bi bi-trash3"></i>
           </button>
         </div>
       </div>
@@ -232,17 +248,19 @@
                 </td>
               </tr>
             </tbody>
-            <tfoot v-if="store.historial.length > 0" class="table-light">
+            <tfoot v-if="historialFiltrado.length > 0" class="table-light">
               <tr>
-                <td colspan="6" class="text-end fw-bold" style="font-size:0.82rem;">TOTAL GENERAL:</td>
+                <td colspan="6" class="text-end fw-bold" style="font-size:0.82rem;">
+                  {{ (filtroHistorialBuscar || filtroHistorialMina || filtroHistorialViaje || filtroHistorialMes || filtroHistorialAnio) ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:' }}
+                </td>
                 <td class="text-end fw-bold text-success">
-                  {{ store.historial.reduce((s, ing) => s + Number(ing.total_entregado), 0).toFixed(2) }}
+                  {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_entregado), 0).toFixed(2) }}
                 </td>
                 <td class="text-end fw-bold" style="color:#2563eb;">
-                  S/ {{ store.historial.reduce((s, ing) => s + Number(ing.total_proveedor), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                  S/ {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_proveedor), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
                 </td>
                 <td class="text-end fw-bold" style="color:#16a34a;">
-                  S/ {{ store.historial.reduce((s, ing) => s + Number(ing.total_mina), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                  S/ {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_mina), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
                 </td>
                 <td colspan="2"></td>
               </tr>
@@ -837,6 +855,34 @@ const ingresoSeleccionado = ref(null);
 const filtroHistorialBuscar = ref('');
 const filtroHistorialMina = ref('');
 const filtroHistorialViaje = ref('');
+const filtroHistorialMes = ref('');
+const filtroHistorialAnio = ref('');
+
+const mesesOpciones = [
+  { value: '', label: 'Todos los meses' },
+  { value: '01', label: 'Enero' },
+  { value: '02', label: 'Febrero' },
+  { value: '03', label: 'Marzo' },
+  { value: '04', label: 'Abril' },
+  { value: '05', label: 'Mayo' },
+  { value: '06', label: 'Junio' },
+  { value: '07', label: 'Julio' },
+  { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Septiembre' },
+  { value: '10', label: 'Octubre' },
+  { value: '11', label: 'Noviembre' },
+  { value: '12', label: 'Diciembre' }
+];
+
+const aniosDisponiblesHistorial = computed(() => {
+  const anios = store.historial
+    .map(i => {
+      if (!i.fecha) return null;
+      return i.fecha.substring(0, 4);
+    })
+    .filter(Boolean);
+  return [...new Set(anios)].sort((a, b) => b - a);
+});
 
 const uniqueViajesHistorial = computed(() => {
   const viajes = store.historial
@@ -849,12 +895,16 @@ const limpiarFiltrosHistorial = () => {
   filtroHistorialBuscar.value = '';
   filtroHistorialMina.value = '';
   filtroHistorialViaje.value = '';
+  filtroHistorialMes.value = '';
+  filtroHistorialAnio.value = '';
 };
 
 const historialFiltrado = computed(() => {
   const q = filtroHistorialBuscar.value.trim().toLowerCase();
   const mina = filtroHistorialMina.value;
   const viaje = filtroHistorialViaje.value;
+  const mes = filtroHistorialMes.value;
+  const anio = filtroHistorialAnio.value;
 
   return store.historial.filter(ing => {
     const matchBuscar = !q || 
@@ -863,7 +913,9 @@ const historialFiltrado = computed(() => {
       (ing.vale || '').toLowerCase().includes(q);
     const matchMina = !mina || (ing.minas || '').includes(mina);
     const matchViaje = !viaje || ing.viaje === viaje;
-    return matchBuscar && matchMina && matchViaje;
+    const matchMes = !mes || (ing.fecha && ing.fecha.substring(5, 7) === mes);
+    const matchAnio = !anio || (ing.fecha && ing.fecha.substring(0, 4) === anio);
+    return matchBuscar && matchMina && matchViaje && matchMes && matchAnio;
   });
 });
 
@@ -877,7 +929,7 @@ const historialPaginado = computed(() => {
   return historialFiltrado.value.slice(inicio, inicio + porPagina.value);
 });
 
-watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje], () => {
+watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje, filtroHistorialMes, filtroHistorialAnio], () => {
   paginaActual.value = 1;
 });
 
