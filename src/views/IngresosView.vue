@@ -101,56 +101,68 @@
       </div>
 
       <!-- Filtros del historial -->
-      <div class="row g-2 mb-3">
-        <div class="col-md-3">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text bg-white border-end-0">
-              <i class="bi bi-search text-muted"></i>
-            </span>
-            <input type="text" class="form-control border-start-0 ps-0"
-              placeholder="Buscar código, viaje, vale..."
-              v-model="filtroHistorialBuscar" />
-          </div>
+      <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+        <!-- Buscador -->
+        <div class="req-search-box ms-0">
+          <i class="bi bi-search"></i>
+          <input 
+            type="text" 
+            v-model="filtroHistorialBuscar" 
+            placeholder="Buscar código, viaje, vale..."
+            style="width: 240px;"
+          />
         </div>
-        <div class="col-md-2">
-          <select v-model="filtroHistorialMina" class="form-select form-select-sm">
-            <option value="">— Todas las Minas —</option>
+
+        <!-- Mina -->
+        <div class="filter-badge">
+          <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+          <select v-model="filtroHistorialMina" class="filter-select-clean" style="width: 150px;">
+            <option value="">Todas las Minas</option>
             <option v-for="m in catalogStore.minas" :key="m.id" :value="m.nombre">
               {{ m.nombre }}
             </option>
           </select>
         </div>
-        <div class="col-md-2">
-          <select v-model="filtroHistorialViaje" class="form-select form-select-sm">
-            <option value="">— Todos los Viajes —</option>
+
+        <!-- Viajes -->
+        <div class="filter-badge">
+          <i class="bi bi-truck text-info me-1"></i>
+          <select v-model="filtroHistorialViaje" class="filter-select-clean" style="width: 130px;">
+            <option value="">Todos los Viajes</option>
             <option v-for="v in uniqueViajesHistorial" :key="v" :value="v">
               {{ v }}
             </option>
           </select>
         </div>
-        <div class="col-md-2">
-          <select v-model="filtroHistorialMes" class="form-select form-select-sm">
+
+        <!-- Mes -->
+        <div class="filter-badge">
+          <i class="bi bi-calendar3 text-success me-1"></i>
+          <select v-model="filtroHistorialMes" class="filter-select-clean" style="width: 155px;">
             <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">
               {{ m.label }}
             </option>
           </select>
         </div>
-        <div class="col-md-2">
-          <select v-model="filtroHistorialAnio" class="form-select form-select-sm">
-            <option value="">— Todos los Años —</option>
+
+        <!-- Año -->
+        <div class="filter-badge">
+          <i class="bi bi-calendar-event text-warning me-1"></i>
+          <select v-model="filtroHistorialAnio" class="filter-select-clean" style="width: 120px;">
+            <option value="">Todos los Años</option>
             <option v-for="a in aniosDisponiblesHistorial" :key="a" :value="a">
               {{ a }}
             </option>
           </select>
         </div>
-        <div class="col-md-1">
-          <button class="btn btn-sm btn-outline-secondary w-100"
-            @click="limpiarFiltrosHistorial"
-            :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje && !filtroHistorialMes && !filtroHistorialAnio"
-            title="Limpiar filtros">
-            <i class="bi bi-trash3"></i>
-          </button>
-        </div>
+
+        <!-- Limpiar -->
+        <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
+          @click="limpiarFiltrosHistorial"
+          :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje && !filtroHistorialMes && !filtroHistorialAnio"
+          title="Limpiar filtros">
+          <i class="bi bi-trash3 me-1"></i> Limpiar
+        </button>
       </div>
 
       <div class="mp-card p-0 overflow-hidden">

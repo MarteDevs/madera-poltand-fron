@@ -34,67 +34,50 @@
 
       <!-- Barra de filtros -->
       <div class="req-filter-bar">
-        <div 
-          class="req-filter-pill" 
-          :class="{ 'active-todos': filtroEstado === 'TODOS' }" 
-          @click="filtroEstado = 'TODOS'"
-        >
-          Todos <span class="pill-count">{{ countTodos }}</span>
-        </div>
-        <div 
-          class="req-filter-pill" 
-          :class="{ 'active-pendiente': filtroEstado === 'PENDIENTE' }" 
-          @click="filtroEstado = 'PENDIENTE'"
-        >
-          Pendientes <span class="pill-count">{{ countPendiente }}</span>
-        </div>
-        <div 
-          class="req-filter-pill" 
-          :class="{ 'active-parcial': filtroEstado === 'PARCIAL' }" 
-          @click="filtroEstado = 'PARCIAL'"
-        >
-          Parciales <span class="pill-count">{{ countParcial }}</span>
-        </div>
-        <div 
-          class="req-filter-pill" 
-          :class="{ 'active-completado': filtroEstado === 'COMPLETADO' }" 
-          @click="filtroEstado = 'COMPLETADO'"
-        >
-          Completados <span class="pill-count">{{ countCompletado }}</span>
-        </div>
-        <div 
-          class="req-filter-pill" 
-          :class="{ 'active-cancelado': filtroEstado === 'CANCELADO' }" 
-          @click="filtroEstado = 'CANCELADO'"
-        >
-          Cancelados <span class="pill-count">{{ countCancelado }}</span>
-        </div>
+        <div class="d-flex align-items-center flex-wrap gap-2 w-100">
+          
+          <!-- Filtro de Estado -->
+          <div class="filter-badge">
+            <i class="bi bi-funnel-fill text-primary me-1"></i>
+            <select v-model="filtroEstado" class="filter-select-clean" style="width: 200px;">
+              <option value="TODOS">Todos los estados ({{ countTodos }})</option>
+              <option value="PENDIENTE">Pendientes ({{ countPendiente }})</option>
+              <option value="PARCIAL">Parciales ({{ countParcial }})</option>
+              <option value="COMPLETADO">Completados ({{ countCompletado }})</option>
+              <option value="CANCELADO">Cancelados ({{ countCancelado }})</option>
+            </select>
+          </div>
 
-        <!-- Filtros de fecha (Mes / Año) -->
-        <div class="d-flex align-items-center gap-2 ms-2">
-          <select v-model="filtroMes" class="form-select form-select-sm" style="width: 140px; border-radius: 20px; border: 1.5px solid var(--mp-border);">
-            <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">
-              {{ m.label }}
-            </option>
-          </select>
-        </div>
+          <!-- Filtro de Mes -->
+          <div class="filter-badge">
+            <i class="bi bi-calendar3 text-success me-1"></i>
+            <select v-model="filtroMes" class="filter-select-clean" style="width: 155px;">
+              <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">
+                {{ m.label }}
+              </option>
+            </select>
+          </div>
 
-        <div class="d-flex align-items-center gap-2">
-          <select v-model="filtroAnio" class="form-select form-select-sm" style="width: 110px; border-radius: 20px; border: 1.5px solid var(--mp-border);">
-            <option value="">Todos los años</option>
-            <option v-for="a in aniosDisponibles" :key="a" :value="a">
-              {{ a }}
-            </option>
-          </select>
-        </div>
+          <!-- Filtro de Año -->
+          <div class="filter-badge">
+            <i class="bi bi-calendar-event text-warning me-1"></i>
+            <select v-model="filtroAnio" class="filter-select-clean" style="width: 120px;">
+              <option value="">Todos los años</option>
+              <option v-for="a in aniosDisponibles" :key="a" :value="a">
+                {{ a }}
+              </option>
+            </select>
+          </div>
 
-        <div class="req-search-box">
-          <i class="bi bi-search"></i>
-          <input 
-            type="text" 
-            v-model="buscarTexto" 
-            placeholder="Buscar por código, mina, sup..." 
-          />
+          <!-- Buscador -->
+          <div class="req-search-box ms-auto">
+            <i class="bi bi-search"></i>
+            <input 
+              type="text" 
+              v-model="buscarTexto" 
+              placeholder="Buscar por código, mina, sup..." 
+            />
+          </div>
         </div>
       </div>
 
