@@ -69,6 +69,14 @@
             </select>
           </div>
 
+          <!-- Limpiar -->
+          <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
+            @click="limpiarFiltros"
+            :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio"
+            title="Limpiar filtros">
+            <i class="bi bi-trash3 me-1"></i> Limpiar
+          </button>
+
           <!-- Buscador -->
           <div class="req-search-box ms-auto">
             <i class="bi bi-search"></i>
@@ -521,6 +529,13 @@ const countCancelado = computed(() => {
     return matchMes && matchAnio;
   }).length;
 });
+
+const limpiarFiltros = () => {
+  filtroEstado.value = 'TODOS';
+  buscarTexto.value = '';
+  filtroMes.value = '';
+  filtroAnio.value = '';
+};
 
 const historialFiltrado = computed(() => {
   return store.historial.filter(r => {
