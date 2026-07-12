@@ -401,8 +401,9 @@
                     <th>ARTÍCULO</th>
                     <th>PROVEEDOR</th>
                     <th class="text-end" style="width:80px;">PEDIDO</th>
+                    <th class="text-end" style="width:80px; color:#22c55e;">ENTREGADO</th>
                     <th class="text-end" style="width:80px;">FALTANTE</th>
-                    <th style="width:120px;" class="text-center pe-3">EN ESTE VIAJE</th>
+                    <th style="width:120px;" class="text-center pe-3">CANTIDAD</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -423,6 +424,7 @@
                       <td class="fw-medium">{{ item.articulo }}</td>
                       <td class="text-muted">{{ item.proveedor }}</td>
                       <td class="text-end">{{ item.pedido }}</td>
+                      <td class="text-end fw-bold" style="color:#22c55e;">{{ item.entregado }}</td>
                       <td class="text-end text-danger fw-bold">{{ item.faltante }}</td>
                       <td class="pe-3">
                         <input type="number" class="form-control form-control-sm text-center fw-bold"
@@ -431,7 +433,7 @@
                       </td>
                     </tr>
                     <tr v-if="!mostrarSoloMarcados && itemsFiltradosNoMarcados.length > 0">
-                      <td colspan="8" class="py-2 px-3 text-secondary bg-light border-bottom border-top" style="font-size:0.7rem; font-weight:700;">
+                      <td colspan="9" class="py-2 px-3 text-secondary bg-light border-bottom border-top" style="font-size:0.7rem; font-weight:700;">
                         <i class="bi bi-arrow-down-short"></i> RESTO DE ÍTEMS PENDIENTES
                       </td>
                     </tr>
@@ -454,6 +456,7 @@
                       <td>{{ item.articulo }}</td>
                       <td class="text-muted">{{ item.proveedor }}</td>
                       <td class="text-end">{{ item.pedido }}</td>
+                      <td class="text-end fw-semibold" style="color:#22c55e;">{{ item.entregado }}</td>
                       <td class="text-end text-danger fw-semibold">{{ item.faltante }}</td>
                       <td class="pe-3">
                         <input type="number" class="form-control form-control-sm text-center"
@@ -466,13 +469,13 @@
 
                   <!-- Sin resultados -->
                   <tr v-if="!mostrarSoloMarcados && itemsFiltradosNoMarcados.length === 0 && itemsMarcados.length === 0">
-                    <td colspan="8" class="text-center py-5 text-muted">
+                    <td colspan="9" class="text-center py-5 text-muted">
                       <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
                       No hay ítems pendientes que coincidan con los filtros.
                     </td>
                   </tr>
                   <tr v-if="mostrarSoloMarcados && itemsMarcados.length === 0">
-                    <td colspan="8" class="text-center py-5 text-muted">
+                    <td colspan="9" class="text-center py-5 text-muted">
                       <i class="bi bi-check2-square fs-2 d-block mb-2 opacity-25"></i>
                       No has seleccionado ningún ítem todavía.
                     </td>
