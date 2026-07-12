@@ -371,7 +371,7 @@
                 <div class="col-md-4">
                   <select ref="refFiltroReq" v-model="filtroCodigoReq" class="form-select form-select-sm">
                     <option value="">— Todos los Req —</option>
-                    <option v-for="req in uniqueRequerimientos" :key="req" :value="req">{{ req }}</option>
+                    <option v-for="req in uniqueRequerimientos" :key="req.codigo" :value="req.codigo">{{ req.codigo }} — {{ req.mina }}</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -966,8 +966,13 @@ const filtroCodigoReq = ref('');
 const mostrarSoloMarcados = ref(false);
 
 const uniqueRequerimientos = computed(() => {
-  const codes = store.pendientes.map(p => p.codigo_req);
-  return [...new Set(codes)].sort();
+  const map = new Map();
+  store.pendientes.forEach(p => {
+    if (!map.has(p.codigo_req)) {
+      map.set(p.codigo_req, p.mina);
+    }
+  });
+  return Array.from(map, ([codigo, mina]) => ({ codigo, mina })).sort((a, b) => a.codigo.localeCompare(b.codigo));
 });
 
 // ---- Paginación Items Pendientes (en modal) ----
