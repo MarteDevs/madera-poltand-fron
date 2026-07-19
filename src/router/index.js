@@ -10,6 +10,7 @@ import MinasView from '../views/MinasView.vue'
 import ProveedoresView from '../views/ProveedoresView.vue'
 import SupervisoresView from '../views/SupervisoresView.vue'
 import UsuariosView from '../views/UsuariosView.vue'
+import AnalisisView from '../views/AnalisisView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,6 +24,7 @@ const router = createRouter({
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiereAuth: true } },
     { path: '/requerimientos', name: 'requerimientos', component: RequerimientosView, meta: { requiereAuth: true } },
     { path: '/ingresos', name: 'ingresos', component: IngresosView, meta: { requiereAuth: true } },
+    { path: '/analisis', name: 'analisis', component: AnalisisView, meta: { requiereAuth: true } },
     { path: '/articulos', name: 'articulos', component: ArticulosView, meta: { requiereAuth: true } },
     { path: '/minas', name: 'minas', component: MinasView, meta: { requiereAuth: true } },
     { path: '/proveedores', name: 'proveedores', component: ProveedoresView, meta: { requiereAuth: true } },

@@ -26,6 +26,9 @@
       <RouterLink to="/ingresos" class="nav-link" active-class="active" @click="closeOnMobile">
         <i class="bi bi-truck-flatbed"></i> Ingresos
       </RouterLink>
+      <RouterLink to="/analisis" class="nav-link" active-class="active" @click="closeOnMobile">
+        <i class="bi bi-bar-chart-fill"></i> Análisis
+      </RouterLink>
 
       <div class="nav-section">Catálogos</div>
       <RouterLink to="/articulos" class="nav-link" active-class="active" @click="closeOnMobile">
