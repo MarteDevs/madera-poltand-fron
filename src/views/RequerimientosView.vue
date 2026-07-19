@@ -69,10 +69,21 @@
             </select>
           </div>
 
+          <!-- Filtro de Proveedor -->
+          <div class="filter-badge">
+            <i class="bi bi-building text-info me-1"></i>
+            <select v-model="filtroProveedor" class="filter-select-clean" style="width: 170px;">
+              <option value="">Todos los Proveedores</option>
+              <option v-for="p in catStore.proveedores" :key="p.id" :value="p.nombre">
+                {{ p.nombre }}
+              </option>
+            </select>
+          </div>
+
           <!-- Limpiar -->
           <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
             @click="limpiarFiltros"
-            :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio"
+            :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio && !filtroProveedor"
             title="Limpiar filtros">
             <i class="bi bi-trash3 me-1"></i> Limpiar
           </button>
@@ -463,6 +474,7 @@ const filtroEstado = ref('TODOS');
 const buscarTexto = ref('');
 const filtroMes = ref('');
 const filtroAnio = ref('');
+const filtroProveedor = ref('');
 
 const mesesOpciones = [
   { value: '', label: 'Todos los meses' },
@@ -494,7 +506,8 @@ const countTodos = computed(() => {
   return store.historial.filter(r => {
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    return matchMes && matchAnio;
+    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
+    return matchMes && matchAnio && matchProv;
   }).length;
 });
 const countPendiente = computed(() => {
@@ -502,7 +515,8 @@ const countPendiente = computed(() => {
     if (r.estado !== 'PENDIENTE') return false;
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    return matchMes && matchAnio;
+    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
+    return matchMes && matchAnio && matchProv;
   }).length;
 });
 const countParcial = computed(() => {
@@ -510,7 +524,8 @@ const countParcial = computed(() => {
     if (r.estado !== 'PARCIAL') return false;
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    return matchMes && matchAnio;
+    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
+    return matchMes && matchAnio && matchProv;
   }).length;
 });
 const countCompletado = computed(() => {
@@ -518,7 +533,8 @@ const countCompletado = computed(() => {
     if (r.estado !== 'COMPLETADO') return false;
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    return matchMes && matchAnio;
+    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
+    return matchMes && matchAnio && matchProv;
   }).length;
 });
 const countCancelado = computed(() => {
@@ -526,7 +542,8 @@ const countCancelado = computed(() => {
     if (r.estado !== 'CANCELADO') return false;
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    return matchMes && matchAnio;
+    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
+    return matchMes && matchAnio && matchProv;
   }).length;
 });
 
@@ -535,6 +552,7 @@ const limpiarFiltros = () => {
   buscarTexto.value = '';
   filtroMes.value = '';
   filtroAnio.value = '';
+  filtroProveedor.value = '';
 };
 
 const historialFiltrado = computed(() => {
@@ -549,8 +567,9 @@ const historialFiltrado = computed(() => {
       
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
+    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
 
-    return matchEstado && matchTexto && matchMes && matchAnio;
+    return matchEstado && matchTexto && matchMes && matchAnio && matchProv;
   });
 });
 
@@ -563,7 +582,7 @@ const totalMinaFiltrado = computed(() => {
 });
 
 const tituloTotal = computed(() => {
-  return (filtroEstado.value !== 'TODOS' || buscarTexto.value.trim() !== '' || filtroMes.value !== '' || filtroAnio.value !== '') ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:';
+  return (filtroEstado.value !== 'TODOS' || buscarTexto.value.trim() !== '' || filtroMes.value !== '' || filtroAnio.value !== '' || filtroProveedor.value !== '') ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:';
 });
 
 // ---- Paginación ----
@@ -588,7 +607,7 @@ const paginasVisibles = computed(() => {
 });
 
 // Resetear página al cambiar filtros, historial o tamaño de página
-watch([filtroEstado, buscarTexto, porPagina, filtroMes, filtroAnio], () => { paginaActual.value = 1; });
+watch([filtroEstado, buscarTexto, porPagina, filtroMes, filtroAnio, filtroProveedor], () => { paginaActual.value = 1; });
 watch(() => store.historial.length, () => { paginaActual.value = 1; });
 
 // ---- Refs para navegación por teclado ----

@@ -135,6 +135,17 @@
           </select>
         </div>
 
+        <!-- Proveedor -->
+        <div class="filter-badge">
+          <i class="bi bi-building text-purple me-1" style="color:#7c3aed;"></i>
+          <select v-model="filtroHistorialProveedor" class="filter-select-clean" style="width: 170px;">
+            <option value="">Todos los Proveedores</option>
+            <option v-for="p in catalogStore.proveedores" :key="p.id" :value="p.nombre">
+              {{ p.nombre }}
+            </option>
+          </select>
+        </div>
+
         <!-- Mes -->
         <div class="filter-badge">
           <i class="bi bi-calendar3 text-success me-1"></i>
@@ -159,7 +170,7 @@
         <!-- Limpiar -->
         <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
           @click="limpiarFiltrosHistorial"
-          :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje && !filtroHistorialMes && !filtroHistorialAnio"
+          :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje && !filtroHistorialProveedor && !filtroHistorialMes && !filtroHistorialAnio"
           title="Limpiar filtros">
           <i class="bi bi-trash3 me-1"></i> Limpiar
         </button>
@@ -263,7 +274,7 @@
             <tfoot v-if="historialFiltrado.length > 0" class="table-light">
               <tr>
                 <td colspan="6" class="text-end fw-bold" style="font-size:0.82rem;">
-                  {{ (filtroHistorialBuscar || filtroHistorialMina || filtroHistorialViaje || filtroHistorialMes || filtroHistorialAnio) ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:' }}
+                  {{ (filtroHistorialBuscar || filtroHistorialMina || filtroHistorialViaje || filtroHistorialProveedor || filtroHistorialMes || filtroHistorialAnio) ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:' }}
                 </td>
                 <td class="text-end fw-bold text-success">
                   {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_entregado), 0).toFixed(2) }}
@@ -870,6 +881,7 @@ const ingresoSeleccionado = ref(null);
 const filtroHistorialBuscar = ref('');
 const filtroHistorialMina = ref('');
 const filtroHistorialViaje = ref('');
+const filtroHistorialProveedor = ref('');
 const filtroHistorialMes = ref('');
 const filtroHistorialAnio = ref('');
 
@@ -910,6 +922,7 @@ const limpiarFiltrosHistorial = () => {
   filtroHistorialBuscar.value = '';
   filtroHistorialMina.value = '';
   filtroHistorialViaje.value = '';
+  filtroHistorialProveedor.value = '';
   filtroHistorialMes.value = '';
   filtroHistorialAnio.value = '';
 };
@@ -918,6 +931,7 @@ const historialFiltrado = computed(() => {
   const q = filtroHistorialBuscar.value.trim().toLowerCase();
   const mina = filtroHistorialMina.value;
   const viaje = filtroHistorialViaje.value;
+  const prov = filtroHistorialProveedor.value;
   const mes = filtroHistorialMes.value;
   const anio = filtroHistorialAnio.value;
 
@@ -928,9 +942,10 @@ const historialFiltrado = computed(() => {
       (ing.vale || '').toLowerCase().includes(q);
     const matchMina = !mina || (ing.minas || '').includes(mina);
     const matchViaje = !viaje || ing.viaje === viaje;
+    const matchProv = !prov || (ing.proveedores || '').includes(prov);
     const matchMes = !mes || (ing.fecha && ing.fecha.substring(5, 7) === mes);
     const matchAnio = !anio || (ing.fecha && ing.fecha.substring(0, 4) === anio);
-    return matchBuscar && matchMina && matchViaje && matchMes && matchAnio;
+    return matchBuscar && matchMina && matchViaje && matchProv && matchMes && matchAnio;
   });
 });
 
@@ -944,7 +959,7 @@ const historialPaginado = computed(() => {
   return historialFiltrado.value.slice(inicio, inicio + porPagina.value);
 });
 
-watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje, filtroHistorialMes, filtroHistorialAnio], () => {
+watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje, filtroHistorialProveedor, filtroHistorialMes, filtroHistorialAnio], () => {
   paginaActual.value = 1;
 });
 
