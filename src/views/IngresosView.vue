@@ -365,6 +365,26 @@
                 </div>
               </div>
 
+              <!-- Tipo de Pago / Destino -->
+              <div class="row g-2 mt-2">
+                <div class="col-md-12">
+                  <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Tipo de Pago / Destino</label>
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm" 
+                      :class="form.tipo_pago === 'DEPOSITO' ? 'btn-warning' : 'btn-outline-secondary'"
+                      @click="form.tipo_pago = form.tipo_pago === 'DEPOSITO' ? null : 'DEPOSITO'">
+                      <i class="bi bi-box-seam me-1"></i> DEPÓSITO
+                    </button>
+                    <button type="button" class="btn btn-sm" 
+                      :class="form.tipo_pago === 'DIRECTO' ? 'btn-info text-white' : 'btn-outline-secondary'"
+                      @click="form.tipo_pago = form.tipo_pago === 'DIRECTO' ? null : 'DIRECTO'">
+                      <i class="bi bi-cash-coin me-1"></i> DIRECTO
+                    </button>
+                    <span v-if="!form.tipo_pago" class="text-muted align-self-center" style="font-size:0.78rem;">Normal (Proveedor)</span>
+                  </div>
+                </div>
+              </div>
+
               <!-- Mina(s) dinámicas (se calcula de items seleccionados) -->
               <div v-if="minasSeleccionadas.length > 0" class="mt-2 d-flex align-items-center gap-2 flex-wrap">
                 <span class="text-muted" style="font-size:0.75rem;">
@@ -826,7 +846,8 @@ const form = ref({
   fecha: new Date().toISOString().split('T')[0],
   viaje: '',
   vale: '',
-  observacion: ''
+  observacion: '',
+  tipo_pago: null
 });
 
 // Minas de los items seleccionados (dinámico)
@@ -1478,6 +1499,7 @@ const abrirModalEdicion = async (ing) => {
   form.value.viaje = ing.viaje || '';
   form.value.vale = ing.vale || '';
   form.value.observacion = ing.observacion || '';
+  form.value.tipo_pago = ing.tipo_pago || null;
 
   bsModal.show();
   
@@ -1544,6 +1566,7 @@ const guardar = async () => {
     viaje: form.value.viaje,
     vale: form.value.vale,
     observacion: form.value.observacion,
+    tipo_pago: form.value.tipo_pago || null,
     detalles: [...detallesNormales, ...extrasValidos]
   };
 
