@@ -614,11 +614,11 @@ const historialFiltrado = computed(() => {
 });
 
 const totalProveedorFiltrado = computed(() => {
-  return historialFiltrado.value.reduce((s, r) => s + Number(r.total_proveedor || 0), 0);
+  return historialFiltrado.value.reduce((s, r) => s + (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_proveedor || 0)), 0);
 });
 
 const totalMinaFiltrado = computed(() => {
-  return historialFiltrado.value.reduce((s, r) => s + Number(r.total_mina || 0), 0);
+  return historialFiltrado.value.reduce((s, r) => s + (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_mina || 0)), 0);
 });
 
 const tituloTotal = computed(() => {

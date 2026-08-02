@@ -255,12 +255,12 @@ const ingFiltrados = computed(() => {
   })
 })
 
-const totalProveedor = computed(() => reqsFiltrados.value.reduce((acc, r) => acc + Number(r.total_proveedor || 0), 0))
-const totalMina = computed(() => reqsFiltrados.value.reduce((acc, r) => acc + Number(r.total_mina || 0), 0))
+const totalProveedor = computed(() => reqsFiltrados.value.reduce((acc, r) => acc + (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_proveedor || 0)), 0))
+const totalMina = computed(() => reqsFiltrados.value.reduce((acc, r) => acc + (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_mina || 0)), 0))
 const totalRequerimientos = computed(() => reqsFiltrados.value.length)
 
-const totalProveedorIngresos = computed(() => ingFiltrados.value.reduce((acc, i) => acc + Number(i.total_proveedor || 0), 0))
-const totalMinaIngresos = computed(() => ingFiltrados.value.reduce((acc, i) => acc + Number(i.total_mina || 0), 0))
+const totalProveedorIngresos = computed(() => ingFiltrados.value.reduce((acc, i) => acc + (i.tipo_pago === 'DIRECTO' ? 0 : Number(i.total_proveedor || 0)), 0))
+const totalMinaIngresos = computed(() => ingFiltrados.value.reduce((acc, i) => acc + (i.tipo_pago === 'DIRECTO' ? 0 : Number(i.total_mina || 0)), 0))
 const totalIngresos = computed(() => ingFiltrados.value.length)
 
 const formatearMonto = (monto) => {
@@ -278,8 +278,8 @@ const datosTendencia = computed(() => {
     if (!r.fecha) return
     const key = isDiario ? r.fecha.substring(8, 10) : r.fecha.substring(5, 7)
     if (!grupos[key]) grupos[key] = { prov: 0, mina: 0 }
-    grupos[key].prov += Number(r.total_proveedor || 0)
-    grupos[key].mina += Number(r.total_mina || 0)
+    grupos[key].prov += (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_proveedor || 0))
+    grupos[key].mina += (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_mina || 0))
   })
   
   const labels = Object.keys(grupos).sort()
@@ -311,7 +311,7 @@ const datosProveedores = computed(() => {
   const provSum = {}
   reqsFiltrados.value.forEach(r => {
     const ps = (r.proveedores || 'S/N').split(',')
-    const monto = Number(r.total_proveedor || 0) / (ps.length || 1)
+    const monto = (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_proveedor || 0)) / (ps.length || 1)
     ps.forEach(p => {
       const pn = p.trim()
       if (!provSum[pn]) provSum[pn] = 0
@@ -337,7 +337,7 @@ const datosMinas = computed(() => {
   reqsFiltrados.value.forEach(r => {
     const m = r.mina || 'Desconocida'
     if (!grupos[m]) grupos[m] = 0
-    grupos[m] += Number(r.total_mina || 0)
+    grupos[m] += (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_mina || 0))
   })
   return {
     labels: Object.keys(grupos),

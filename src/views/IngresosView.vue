@@ -299,10 +299,10 @@
                   {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_entregado), 0).toFixed(2) }}
                 </td>
                 <td class="text-end fw-bold" style="color:#2563eb;">
-                  S/ {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_proveedor), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                  S/ {{ historialFiltrado.reduce((s, ing) => s + (ing.tipo_pago === 'DIRECTO' ? 0 : Number(ing.total_proveedor)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
                 </td>
                 <td class="text-end fw-bold" style="color:#16a34a;">
-                  S/ {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_mina), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                  S/ {{ historialFiltrado.reduce((s, ing) => s + (ing.tipo_pago === 'DIRECTO' ? 0 : Number(ing.total_mina)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
                 </td>
                 <td colspan="2"></td>
               </tr>

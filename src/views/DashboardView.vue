@@ -208,12 +208,12 @@ const reqsActivos = computed(() =>
 );
 
 const totalProveedorPendiente = computed(() => {
-  const t = reqsActivos.value.reduce((s, r) => s + Number(r.total_proveedor || 0), 0);
+  const t = reqsActivos.value.reduce((s, r) => s + (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_proveedor || 0)), 0);
   return t.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 });
 
 const totalMinaPendiente = computed(() => {
-  const t = reqsActivos.value.reduce((s, r) => s + Number(r.total_mina || 0), 0);
+  const t = reqsActivos.value.reduce((s, r) => s + (r.tipo_pago === 'DIRECTO' ? 0 : Number(r.total_mina || 0)), 0);
   return t.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 });
 
