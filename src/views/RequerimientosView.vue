@@ -130,7 +130,12 @@
               <td>{{ r.fecha }}</td>
               <td>{{ r.mina }}</td>
               <td>{{ r.supervisor }}</td>
-              <td><span :class="badgeClass(r.estado)">{{ r.estado }}</span></td>
+              <td>
+                <span :class="badgeClass(r.estado)">{{ r.estado }}</span>
+                <span v-if="r.tipo_pago" class="ms-1" :class="r.tipo_pago === 'DEPOSITO' ? 'badge bg-warning text-dark' : 'badge bg-info text-white'" style="font-size:0.65rem;">
+                  {{ r.tipo_pago }}
+                </span>
+              </td>
               <td class="text-end fw-semibold" style="color:#2563eb;">
                 S/ {{ Number(r.total_proveedor).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
               </td>
@@ -253,6 +258,23 @@
                   empty-label="Sin asignar"
                   @navigate="onSupervisorNavigate"
                 />
+              </div>
+              <!-- Tipo de Pago -->
+              <div class="col-md-12 mt-2">
+                <label class="form-label fw-medium" style="font-size:0.85rem;">Tipo de Pago</label>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-sm" 
+                    :class="form.tipo_pago === 'DEPOSITO' ? 'btn-warning' : 'btn-outline-secondary'"
+                    @click="form.tipo_pago = form.tipo_pago === 'DEPOSITO' ? null : 'DEPOSITO'">
+                    <i class="bi bi-box-seam me-1"></i> DEPÓSITO
+                  </button>
+                  <button type="button" class="btn btn-sm" 
+                    :class="form.tipo_pago === 'DIRECTO' ? 'btn-info text-white' : 'btn-outline-secondary'"
+                    @click="form.tipo_pago = form.tipo_pago === 'DIRECTO' ? null : 'DIRECTO'">
+                    <i class="bi bi-cash-coin me-1"></i> DIRECTO
+                  </button>
+                  <span v-if="!form.tipo_pago" class="text-muted align-self-center" style="font-size:0.78rem;">Normal (Proveedor)</span>
+                </div>
               </div>
             </div>
 
@@ -627,6 +649,7 @@ const formVacio = () => ({
   mina_id: '',
   proveedor_id: '',
   supervisor_id: '',
+  tipo_pago: null,
   detalles: []
 });
 const form = ref(formVacio());
@@ -678,6 +701,7 @@ const prepararEdicion = async (r) => {
     mina_id: minaObj?.id || '',
     proveedor_id: rawDetalles[0]?.proveedor_id || '',
     supervisor_id: catStore.supervisores.find(s => s.nombre === r.supervisor)?.id || '',
+    tipo_pago: r.tipo_pago || null,
     detalles: rawDetalles.map(d => ({
       id: d.id,
       articulo_id: d.articulo_id,
@@ -1038,6 +1062,7 @@ const guardar = async () => {
       fecha: form.value.fecha,
       mina_id: form.value.mina_id,
       supervisor_id: form.value.supervisor_id || null,
+      tipo_pago: form.value.tipo_pago || null,
       detalles: detallesConProveedor
     });
   } else {
@@ -1045,6 +1070,7 @@ const guardar = async () => {
       fecha: form.value.fecha,
       mina_id: form.value.mina_id,
       supervisor_id: form.value.supervisor_id || null,
+      tipo_pago: form.value.tipo_pago || null,
       detalles: detallesConProveedor
     });
   }

@@ -786,10 +786,9 @@ const refMinaExtra = ref([]);
 const refCantidadExtra = ref([]);
 
 // Opciones de viaje para el SearchableSelect
-const opcionesViaje = [
-  ...Array.from({ length: 13 }, (_, i) => ({ id: `${i + 1}`, nombre: `${i + 1}` })),
-  { id: 'DEPOSITO', nombre: 'DEPOSITO' }
-];
+const opcionesViaje = computed(() => 
+  catalogStore.viajes.map(v => ({ id: v.nombre, nombre: v.nombre }))
+);
 
 // Estado de tabs
 const tabActiva = ref('pendientes');

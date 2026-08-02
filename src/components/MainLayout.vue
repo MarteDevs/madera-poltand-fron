@@ -43,6 +43,9 @@
       <RouterLink to="/supervisores" class="nav-link" active-class="active" @click="closeOnMobile">
         <i class="bi bi-people-fill"></i> Supervisores
       </RouterLink>
+      <RouterLink to="/viajes" class="nav-link" active-class="active" @click="closeOnMobile">
+        <i class="bi bi-signpost-2-fill"></i> Viajes
+      </RouterLink>
 
       <div v-if="esAdmin" class="nav-section">Administración</div>
       <RouterLink v-if="esAdmin" to="/usuarios" class="nav-link" active-class="active" @click="closeOnMobile">

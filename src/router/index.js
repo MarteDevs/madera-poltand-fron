@@ -11,6 +11,7 @@ import ProveedoresView from '../views/ProveedoresView.vue'
 import SupervisoresView from '../views/SupervisoresView.vue'
 import UsuariosView from '../views/UsuariosView.vue'
 import AnalisisView from '../views/AnalisisView.vue'
+import ViajesView from '../views/ViajesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,6 +30,7 @@ const router = createRouter({
     { path: '/minas', name: 'minas', component: MinasView, meta: { requiereAuth: true } },
     { path: '/proveedores', name: 'proveedores', component: ProveedoresView, meta: { requiereAuth: true } },
     { path: '/supervisores', name: 'supervisores', component: SupervisoresView, meta: { requiereAuth: true } },
+    { path: '/viajes', name: 'viajes', component: ViajesView, meta: { requiereAuth: true } },
     { path: '/usuarios', name: 'usuarios', component: UsuariosView, meta: { requiereAuth: true, requiereAdmin: true } },
   ]
 })
