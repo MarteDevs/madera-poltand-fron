@@ -80,10 +80,20 @@
             </select>
           </div>
 
+          <!-- Filtro de Destino (tipo_pago) -->
+          <div class="filter-badge">
+            <i class="bi bi-pin-map-fill text-warning me-1"></i>
+            <select v-model="filtroTipoPago" class="filter-select-clean" style="width: 140px;">
+              <option value="">Todo Destino</option>
+              <option value="DEPOSITO">Depósito</option>
+              <option value="DIRECTO">Directo</option>
+            </select>
+          </div>
+
           <!-- Limpiar -->
           <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
             @click="limpiarFiltros"
-            :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio && !filtroProveedor"
+            :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio && !filtroProveedor && !filtroTipoPago"
             title="Limpiar filtros">
             <i class="bi bi-trash3 me-1"></i> Limpiar
           </button>
@@ -497,6 +507,7 @@ const buscarTexto = ref('');
 const filtroMes = ref('');
 const filtroAnio = ref('');
 const filtroProveedor = ref('');
+const filtroTipoPago = ref('');
 
 const mesesOpciones = [
   { value: '', label: 'Todos los meses' },
@@ -529,7 +540,8 @@ const countTodos = computed(() => {
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
     const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    return matchMes && matchAnio && matchProv;
+    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
+    return matchMes && matchAnio && matchProv && matchTipo;
   }).length;
 });
 const countPendiente = computed(() => {
@@ -538,7 +550,8 @@ const countPendiente = computed(() => {
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
     const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    return matchMes && matchAnio && matchProv;
+    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
+    return matchMes && matchAnio && matchProv && matchTipo;
   }).length;
 });
 const countParcial = computed(() => {
@@ -547,7 +560,8 @@ const countParcial = computed(() => {
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
     const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    return matchMes && matchAnio && matchProv;
+    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
+    return matchMes && matchAnio && matchProv && matchTipo;
   }).length;
 });
 const countCompletado = computed(() => {
@@ -556,7 +570,8 @@ const countCompletado = computed(() => {
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
     const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    return matchMes && matchAnio && matchProv;
+    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
+    return matchMes && matchAnio && matchProv && matchTipo;
   }).length;
 });
 const countCancelado = computed(() => {
@@ -565,7 +580,8 @@ const countCancelado = computed(() => {
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
     const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    return matchMes && matchAnio && matchProv;
+    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
+    return matchMes && matchAnio && matchProv && matchTipo;
   }).length;
 });
 
@@ -575,6 +591,7 @@ const limpiarFiltros = () => {
   filtroMes.value = '';
   filtroAnio.value = '';
   filtroProveedor.value = '';
+  filtroTipoPago.value = '';
 };
 
 const historialFiltrado = computed(() => {
@@ -590,8 +607,9 @@ const historialFiltrado = computed(() => {
     const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
     const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
     const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
+    const matchTipoPago = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
 
-    return matchEstado && matchTexto && matchMes && matchAnio && matchProv;
+    return matchEstado && matchTexto && matchMes && matchAnio && matchProv && matchTipoPago;
   });
 });
 

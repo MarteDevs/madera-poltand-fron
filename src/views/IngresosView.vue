@@ -146,6 +146,16 @@
           </select>
         </div>
 
+        <!-- Destino (tipo_pago) -->
+        <div class="filter-badge">
+          <i class="bi bi-pin-map-fill text-warning me-1"></i>
+          <select v-model="filtroHistorialTipoPago" class="filter-select-clean" style="width: 140px;">
+            <option value="">Todo Destino</option>
+            <option value="DEPOSITO">Depósito</option>
+            <option value="DIRECTO">Directo</option>
+          </select>
+        </div>
+
         <!-- Mes -->
         <div class="filter-badge">
           <i class="bi bi-calendar3 text-success me-1"></i>
@@ -170,7 +180,7 @@
         <!-- Limpiar -->
         <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
           @click="limpiarFiltrosHistorial"
-          :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje && !filtroHistorialProveedor && !filtroHistorialMes && !filtroHistorialAnio"
+          :disabled="!filtroHistorialBuscar && !filtroHistorialMina && !filtroHistorialViaje && !filtroHistorialProveedor && !filtroHistorialMes && !filtroHistorialAnio && !filtroHistorialTipoPago"
           title="Limpiar filtros">
           <i class="bi bi-trash3 me-1"></i> Limpiar
         </button>
@@ -208,6 +218,7 @@
                 <th>Código Ingreso</th>
                 <th>Fecha</th>
                 <th>N° Viaje</th>
+                <th>Destino</th>
                 <th>Vale</th>
                 <th>Mina(s)</th>
                 <th class="text-center">Ítems</th>
@@ -225,7 +236,7 @@
                 </td>
               </tr>
               <tr v-else-if="store.historial.length === 0">
-                <td colspan="11" class="text-center py-5 text-muted">
+                <td colspan="12" class="text-center py-5 text-muted">
                   <i class="bi bi-inbox fs-4 d-block mb-2"></i>No hay ingresos registrados aún.
                 </td>
               </tr>
@@ -234,6 +245,14 @@
                 <td>{{ ing.fecha }}</td>
                 <td>
                   <span v-if="ing.viaje" class="badge bg-light text-dark border">{{ ing.viaje }}</span>
+                  <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
+                </td>
+                <td class="text-center">
+                  <span v-if="ing.tipo_pago && ing.tipo_pago !== 'PROVEEDOR'" 
+                        :class="ing.tipo_pago === 'DEPOSITO' ? 'badge bg-warning text-dark border-warning' : 'badge bg-info text-white border-info'" 
+                        style="font-size:0.75rem;">
+                    {{ ing.tipo_pago === 'DEPOSITO' ? 'DEPÓSITO' : 'DIRECTO' }}
+                  </span>
                   <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
                 </td>
                 <td>
@@ -273,8 +292,8 @@
             </tbody>
             <tfoot v-if="historialFiltrado.length > 0" class="table-light">
               <tr>
-                <td colspan="6" class="text-end fw-bold" style="font-size:0.82rem;">
-                  {{ (filtroHistorialBuscar || filtroHistorialMina || filtroHistorialViaje || filtroHistorialProveedor || filtroHistorialMes || filtroHistorialAnio) ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:' }}
+                <td colspan="7" class="text-end fw-bold" style="font-size:0.82rem;">
+                  {{ (filtroHistorialBuscar || filtroHistorialMina || filtroHistorialViaje || filtroHistorialProveedor || filtroHistorialMes || filtroHistorialAnio || filtroHistorialTipoPago) ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:' }}
                 </td>
                 <td class="text-end fw-bold text-success">
                   {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_entregado), 0).toFixed(2) }}
@@ -881,6 +900,7 @@ const filtroHistorialBuscar = ref('');
 const filtroHistorialMina = ref('');
 const filtroHistorialViaje = ref('');
 const filtroHistorialProveedor = ref('');
+const filtroHistorialTipoPago = ref('');
 const filtroHistorialMes = ref('');
 const filtroHistorialAnio = ref('');
 
@@ -922,6 +942,7 @@ const limpiarFiltrosHistorial = () => {
   filtroHistorialMina.value = '';
   filtroHistorialViaje.value = '';
   filtroHistorialProveedor.value = '';
+  filtroHistorialTipoPago.value = '';
   filtroHistorialMes.value = '';
   filtroHistorialAnio.value = '';
 };
@@ -931,6 +952,7 @@ const historialFiltrado = computed(() => {
   const mina = filtroHistorialMina.value;
   const viaje = filtroHistorialViaje.value;
   const prov = filtroHistorialProveedor.value;
+  const tipoPago = filtroHistorialTipoPago.value;
   const mes = filtroHistorialMes.value;
   const anio = filtroHistorialAnio.value;
 
@@ -942,9 +964,10 @@ const historialFiltrado = computed(() => {
     const matchMina = !mina || (ing.minas || '').includes(mina);
     const matchViaje = !viaje || ing.viaje === viaje;
     const matchProv = !prov || (ing.proveedores || '').includes(prov);
+    const matchTipoPago = !tipoPago || ing.tipo_pago === tipoPago;
     const matchMes = !mes || (ing.fecha && ing.fecha.substring(5, 7) === mes);
     const matchAnio = !anio || (ing.fecha && ing.fecha.substring(0, 4) === anio);
-    return matchBuscar && matchMina && matchViaje && matchProv && matchMes && matchAnio;
+    return matchBuscar && matchMina && matchViaje && matchProv && matchTipoPago && matchMes && matchAnio;
   });
 });
 
@@ -958,7 +981,7 @@ const historialPaginado = computed(() => {
   return historialFiltrado.value.slice(inicio, inicio + porPagina.value);
 });
 
-watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje, filtroHistorialProveedor, filtroHistorialMes, filtroHistorialAnio], () => {
+watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje, filtroHistorialProveedor, filtroHistorialTipoPago, filtroHistorialMes, filtroHistorialAnio], () => {
   paginaActual.value = 1;
 });
 
@@ -1268,18 +1291,18 @@ const exportarHistorialExcel = async () => {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Madera Poltand ERP';
   const ws = workbook.addWorksheet('Historial Detallado');
-  const TOTAL_COLS = 16;
+  const TOTAL_COLS = 17;
 
   // 1. Título
   addTitleBlock(ws, 'MADERA POLTAND', 'Historial de Ingresos Detallado', TOTAL_COLS);
 
   // 2. Cabecera en fila 5
   const headers = [
-    'Cód. Ingreso', 'Fecha', 'Viaje', 'Vale', 'Obs.',
+    'Cód. Ingreso', 'Fecha', 'Viaje', 'Destino', 'Vale', 'Obs.',
     'Req.', 'Mina', 'Artículo', 'Proveedor',
     'P.Prov', 'T.Prov', 'P.Mina', 'T.Mina', 'Pedido', 'En Viaje', 'Faltante'
   ];
-  const widths = [18, 10, 9, 8, 14, 12, 12, 26, 16, 9, 10, 9, 10, 9, 9, 9];
+  const widths = [18, 10, 9, 10, 8, 14, 12, 12, 26, 16, 9, 10, 9, 10, 9, 9, 9];
   headers.forEach((h, i) => {
     ws.getColumn(i + 1).width = widths[i];
     ws.getCell(5, i + 1).value = h;
@@ -1288,7 +1311,7 @@ const exportarHistorialExcel = async () => {
 
   // 3. Datos desde fila 6
   const dataStartRow = 6;
-  const numCols = [10, 11, 12, 13, 14, 15, 16]; // Columnas numéricas
+  const numCols = [11, 12, 13, 14, 15, 16, 17]; // Columnas numéricas shiftadas por +1
 
   response.data.forEach((item, idx) => {
     const rowNum = dataStartRow + idx;
@@ -1301,42 +1324,43 @@ const exportarHistorialExcel = async () => {
     row.getCell(1).value = item.codigo_ingreso;
     row.getCell(2).value = item.fecha_ingreso;
     row.getCell(3).value = item.viaje || '';
-    row.getCell(4).value = item.vale || '';
-    row.getCell(5).value = item.observacion || '';
-    row.getCell(6).value = item.codigo_req;
-    row.getCell(7).value = item.mina || '';
-    row.getCell(8).value = item.articulo;
-    row.getCell(9).value = item.proveedor;
-    row.getCell(10).value = precioProv;
-    row.getCell(11).value = precioProv * cantEntregada; // T.Prov
-    row.getCell(12).value = precioMina;
-    row.getCell(13).value = precioMina * cantEntregada; // T.Mina
-    row.getCell(14).value = Number(item.pedido || 0);
-    row.getCell(15).value = cantEntregada;
-    row.getCell(16).value = Number(item.faltante || 0);
+    row.getCell(4).value = item.tipo_pago === 'DEPOSITO' ? 'Depósito' : (item.tipo_pago === 'DIRECTO' ? 'Directo' : '');
+    row.getCell(5).value = item.vale || '';
+    row.getCell(6).value = item.observacion || '';
+    row.getCell(7).value = item.codigo_req;
+    row.getCell(8).value = item.mina || '';
+    row.getCell(9).value = item.articulo;
+    row.getCell(10).value = item.proveedor;
+    row.getCell(11).value = precioProv;
+    row.getCell(12).value = precioProv * cantEntregada; // T.Prov
+    row.getCell(13).value = precioMina;
+    row.getCell(14).value = precioMina * cantEntregada; // T.Mina
+    row.getCell(15).value = Number(item.pedido || 0);
+    row.getCell(16).value = cantEntregada;
+    row.getCell(17).value = Number(item.faltante || 0);
 
     // Formato numérico y alineación
     numCols.forEach(c => {
       row.getCell(c).numFmt = '#,##0.00';
       row.getCell(c).alignment = { horizontal: 'right', vertical: 'middle' };
     });
-    for (let c = 1; c <= 9; c++) {
+    for (let c = 1; c <= 10; c++) {
       row.getCell(c).alignment = { horizontal: 'left', vertical: 'middle' };
     }
 
     // Color faltante
     const faltante = Number(item.faltante || 0);
     if (faltante > 0) {
-      row.getCell(16).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
+      row.getCell(17).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
     } else if (faltante === 0) {
-      row.getCell(16).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
+      row.getCell(17).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
     }
 
     styleDataRow(ws, rowNum, TOTAL_COLS, idx % 2 === 1);
     
     // Resaltar las nuevas columnas calculadas con un color de fondo suave
-    row.getCell(11).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Azul muy claro
-    row.getCell(13).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } }; // Verde muy claro
+    row.getCell(12).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Azul muy claro
+    row.getCell(14).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } }; // Verde muy claro
   });
 
   // 4. Fila de totales
@@ -1344,7 +1368,7 @@ const exportarHistorialExcel = async () => {
   const lastDataRow = totalRow - 1;
 
   // Fórmulas SUM solo para los totales calculados
-  ['K', 'M'].forEach(col => { // K = T.Prov, M = T.Mina
+  ['L', 'N'].forEach(col => { // L = T.Prov, N = T.Mina
     const cell = ws.getCell(`${col}${totalRow}`);
     cell.value = { formula: `SUM(${col}${dataStartRow}:${col}${lastDataRow})` };
     cell.numFmt = '#,##0.00';
