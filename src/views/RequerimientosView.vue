@@ -132,7 +132,7 @@
               <td>{{ r.supervisor }}</td>
               <td>
                 <span :class="badgeClass(r.estado)">{{ r.estado }}</span>
-                <span v-if="r.tipo_pago" class="ms-1" :class="r.tipo_pago === 'DEPOSITO' ? 'badge bg-warning text-dark' : 'badge bg-info text-white'" style="font-size:0.65rem;">
+                <span v-if="r.tipo_pago && r.tipo_pago !== 'PROVEEDOR'" class="ms-1" :class="r.tipo_pago === 'DEPOSITO' ? 'badge bg-warning text-dark' : 'badge bg-info text-white'" style="font-size:0.65rem;">
                   {{ r.tipo_pago }}
                 </span>
               </td>
