@@ -244,7 +244,7 @@
                 <td><span class="fw-medium text-primary" style="font-size:0.82rem;">{{ ing.codigo_ingreso }}</span></td>
                 <td>{{ ing.fecha }}</td>
                 <td>
-                  <span v-if="ing.viaje" class="badge bg-light text-dark border">{{ ing.viaje }}</span>
+                  <span v-if="ing.viaje && (!ing.tipo_pago || (ing.tipo_pago !== 'DEPOSITO' && ing.tipo_pago !== 'DIRECTO'))" class="badge bg-light text-dark border">{{ ing.viaje }}</span>
                   <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
                 </td>
                 <td class="text-center">
@@ -348,7 +348,9 @@
                 <div class="col-md-3">
                   <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">N° Viaje</label>
                   <SearchableSelect ref="refViaje" v-model="form.viaje"
-                    :options="opcionesViaje" placeholder="— Seleccionar —"
+                    :options="opcionesViaje" 
+                    :disabled="!!form.tipo_pago"
+                    :placeholder="form.tipo_pago ? 'No aplica (' + (form.tipo_pago === 'DEPOSITO' ? 'Depósito' : 'Directo') + ')' : '— Seleccionar —'"
                     @navigate="refVale.focus()" />
                 </div>
                 <div class="col-md-3">
@@ -372,12 +374,12 @@
                   <div class="d-flex gap-2">
                     <button type="button" class="btn btn-sm" 
                       :class="form.tipo_pago === 'DEPOSITO' ? 'btn-warning' : 'btn-outline-secondary'"
-                      @click="form.tipo_pago = form.tipo_pago === 'DEPOSITO' ? null : 'DEPOSITO'">
+                      @click="seleccionarTipoPago('DEPOSITO')">
                       <i class="bi bi-box-seam me-1"></i> DEPÓSITO
                     </button>
                     <button type="button" class="btn btn-sm" 
                       :class="form.tipo_pago === 'DIRECTO' ? 'btn-info text-white' : 'btn-outline-secondary'"
-                      @click="form.tipo_pago = form.tipo_pago === 'DIRECTO' ? null : 'DIRECTO'">
+                      @click="seleccionarTipoPago('DIRECTO')">
                       <i class="bi bi-cash-coin me-1"></i> DIRECTO
                     </button>
                     <span v-if="!form.tipo_pago" class="text-muted align-self-center" style="font-size:0.78rem;">Normal (Proveedor)</span>
@@ -865,6 +867,15 @@ const minasSeleccionadas = computed(() => {
   return [...new Set([...minasNormales, ...minasExtras])].sort();
 });
 
+const seleccionarTipoPago = (tipo) => {
+  if (form.value.tipo_pago === tipo) {
+    form.value.tipo_pago = null;
+  } else {
+    form.value.tipo_pago = tipo;
+    form.value.viaje = ''; // Limpiar número de viaje si es depósito o directo
+  }
+};
+
 // Preview del código de ingreso
 const codigoPreview = computed(() => {
   if (modoEdicion.value) return ingresoEditId.value ? 'Editando...' : '';
@@ -872,7 +883,7 @@ const codigoPreview = computed(() => {
   if (!f) return 'ENT-________-___';
   const d = new Date(f + 'T00:00:00'); // Evitar timezone issues
   const yyyymmdd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  const viaje = form.value.viaje || 'SV';
+  const viaje = form.value.tipo_pago ? (form.value.tipo_pago === 'DEPOSITO' ? 'DEP' : 'DIR') : (form.value.viaje || 'SV');
   return `ENT-${yyyymmdd}-${viaje}-###`;
 });
 
@@ -953,6 +964,7 @@ const aniosDisponiblesHistorial = computed(() => {
 
 const uniqueViajesHistorial = computed(() => {
   const viajes = store.historial
+    .filter(i => !i.tipo_pago || (i.tipo_pago !== 'DEPOSITO' && i.tipo_pago !== 'DIRECTO'))
     .map(i => i.viaje)
     .filter(v => v && v.trim() !== '');
   return [...new Set(viajes)].sort();
@@ -983,7 +995,8 @@ const historialFiltrado = computed(() => {
       (ing.viaje || '').toLowerCase().includes(q) ||
       (ing.vale || '').toLowerCase().includes(q);
     const matchMina = !mina || (ing.minas || '').includes(mina);
-    const matchViaje = !viaje || ing.viaje === viaje;
+    const esViajeValido = !ing.tipo_pago || (ing.tipo_pago !== 'DEPOSITO' && ing.tipo_pago !== 'DIRECTO');
+    const matchViaje = !viaje || (esViajeValido && ing.viaje === viaje);
     const matchProv = !prov || (ing.proveedores || '').includes(prov);
     const matchTipoPago = !tipoPago || ing.tipo_pago === tipoPago;
     const matchMes = !mes || (ing.fecha && ing.fecha.substring(5, 7) === mes);
@@ -1496,10 +1509,14 @@ const abrirModalEdicion = async (ing) => {
   ingresoEditId.value = ing.id;
   
   form.value.fecha = ing.fecha;
-  form.value.viaje = ing.viaje || '';
+  form.value.tipo_pago = ing.tipo_pago || null;
+  if (form.value.tipo_pago === 'DEPOSITO' || form.value.tipo_pago === 'DIRECTO') {
+    form.value.viaje = '';
+  } else {
+    form.value.viaje = ing.viaje || '';
+  }
   form.value.vale = ing.vale || '';
   form.value.observacion = ing.observacion || '';
-  form.value.tipo_pago = ing.tipo_pago || null;
 
   bsModal.show();
   
@@ -1561,9 +1578,10 @@ const guardar = async () => {
     return;
   }
 
+  const esDepositoODirecto = form.value.tipo_pago === 'DEPOSITO' || form.value.tipo_pago === 'DIRECTO';
   const payload = {
     fecha: form.value.fecha,
-    viaje: form.value.viaje,
+    viaje: esDepositoODirecto ? null : (form.value.viaje || null),
     vale: form.value.vale,
     observacion: form.value.observacion,
     tipo_pago: form.value.tipo_pago || null,

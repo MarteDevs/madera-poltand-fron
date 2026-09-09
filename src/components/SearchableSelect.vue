@@ -3,7 +3,7 @@
     <!-- Campo visible -->
     <div
       class="ss-trigger"
-      :class="{ 'ss-open': open, 'is-invalid': invalid }"
+      :class="{ 'ss-open': open, 'is-invalid': invalid, 'ss-disabled': disabled }"
       @click="toggle"
     >
       <span :class="modelValue ? 'ss-value' : 'ss-placeholder'">
@@ -65,7 +65,8 @@ const props = defineProps({
   placeholder:{ type: String, default: 'Seleccionar' },
   allowEmpty: { type: Boolean, default: false },
   emptyLabel: { type: String, default: 'Sin asignar' },
-  invalid:    { type: Boolean, default: false }
+  invalid:    { type: Boolean, default: false },
+  disabled:   { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue', 'navigate']);
@@ -86,9 +87,13 @@ const filtered = computed(() => {
   return props.options.filter(o => String(o[props.labelKey]).toLowerCase().includes(q));
 });
 
-const toggle = () => { open.value ? close() : openDropdown(); };
+const toggle = () => {
+  if (props.disabled) return;
+  open.value ? close() : openDropdown();
+};
 
 const openDropdown = () => {
+  if (props.disabled) return;
   open.value = true;
   query.value = '';
   nextTick(() => searchRef.value?.focus());
@@ -144,6 +149,13 @@ defineExpose({ focusOpen: openDropdown });
   box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
 }
 .ss-trigger.is-invalid { border-color: #ef4444; }
+.ss-trigger.ss-disabled {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+  opacity: 0.75;
+  pointer-events: none;
+}
 
 .ss-value {
   font-size: 0.9rem;
