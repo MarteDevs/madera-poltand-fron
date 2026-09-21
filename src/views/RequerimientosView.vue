@@ -500,6 +500,7 @@ const siguienteCodigoReq = ref('');
 // ---- Estado de Edición ----
 const modoEdicion = ref(false);
 const idRequerimientoEditar = ref(null);
+const cargandoEdicion = ref(false);
 
 // ---- Filtros y Búsqueda ----
 const filtroEstado = ref('TODOS');
@@ -681,6 +682,7 @@ onMounted(async () => {
 const abrirModalCrear = async () => {
   modoEdicion.value = false;
   idRequerimientoEditar.value = null;
+  cargandoEdicion.value = false;
   form.value = formVacio();
   mensajeError.value = '';
   mensajeExito.value = '';
@@ -700,11 +702,26 @@ watch(() => form.value.fecha, async (nuevaFecha) => {
   }
 });
 
+// Recalcular precios de las líneas si el usuario cambia el proveedor seleccionado
+watch(() => form.value.proveedor_id, (nuevoProvId) => {
+  if (cargandoEdicion.value) return;
+  if (form.value.detalles && form.value.detalles.length > 0) {
+    form.value.detalles.forEach(linea => {
+      if (linea.articulo_id) {
+        const precios = catStore.getPrecio(linea.articulo_id, nuevoProvId);
+        linea.precio_proveedor = precios.precio_proveedor;
+        linea.precio_mina = precios.precio_mina;
+      }
+    });
+  }
+});
+
 const prepararEdicion = async (r) => {
   modoEdicion.value = true;
   idRequerimientoEditar.value = r.id;
   mensajeError.value = '';
   mensajeExito.value = '';
+  cargandoEdicion.value = true;
 
   // Buscamos los datos actuales para llenar el form
   const rawDetalles = await store.getDetalles(r.id);
@@ -730,6 +747,10 @@ const prepararEdicion = async (r) => {
       entregado: Number(d.entregado)
     }))
   };
+
+  nextTick(() => {
+    cargandoEdicion.value = false;
+  });
 
   bsModalCrear.show();
 };
@@ -1040,11 +1061,9 @@ const onSupervisorNavigate = () => nextTick(() => agregarBtnRef.value?.focus());
 const quitarLinea = (i) => form.value.detalles.splice(i, 1);
 
 const onArticuloChange = (linea) => {
-  const art = catStore.articulos.find(a => a.id === linea.articulo_id);
-  if (art) {
-    linea.precio_proveedor = art.precio_proveedor;
-    linea.precio_mina = art.precio_mina;
-  }
+  const precios = catStore.getPrecio(linea.articulo_id, form.value.proveedor_id);
+  linea.precio_proveedor = precios.precio_proveedor;
+  linea.precio_mina = precios.precio_mina;
 };
 
 const guardar = async () => {

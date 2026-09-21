@@ -606,6 +606,7 @@
                           v-model="ext.proveedor_id"
                           :options="catalogStore.proveedores"
                           placeholder="Seleccionar proveedor..."
+                          @update:modelValue="onArticuloChange(idx)"
                           @navigate="refMinaExtra[idx]?.focusOpen()"
                         />
                       </div>
@@ -917,11 +918,9 @@ const onArticuloChange = (idx) => {
     extra.precio_mina = 0;
     return;
   }
-  const art = catalogStore.articulos.find(a => a.id === extra.articulo_id);
-  if (art) {
-    extra.precio_proveedor = Number(art.precio_proveedor);
-    extra.precio_mina = Number(art.precio_mina);
-  }
+  const precios = catalogStore.getPrecio(extra.articulo_id, extra.proveedor_id);
+  extra.precio_proveedor = precios.precio_proveedor;
+  extra.precio_mina = precios.precio_mina;
 };
 
 // Estado del modal de detalle
