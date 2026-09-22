@@ -15,7 +15,7 @@ export const useCatalogosStore = defineStore('catalogos', {
         async cargarCatalogos() {
             this.cargando = true;
             try {
-                const [resMinas, resProv, resArt, resSup, resViajes, resPrecios] = await Promise.all([
+                const results = await Promise.allSettled([
                     api.get('/minas'),
                     api.get('/proveedores'),
                     api.get('/articulos'),
@@ -23,12 +23,12 @@ export const useCatalogosStore = defineStore('catalogos', {
                     api.get('/viajes'),
                     api.get('/articulos/precios-proveedores')
                 ]);
-                this.minas = resMinas.data;
-                this.proveedores = resProv.data;
-                this.articulos = resArt.data;
-                this.supervisores = resSup.data;
-                this.viajes = resViajes.data;
-                this.preciosProveedores = resPrecios.data || [];
+                if (results[0].status === 'fulfilled') this.minas = results[0].value.data || [];
+                if (results[1].status === 'fulfilled') this.proveedores = results[1].value.data || [];
+                if (results[2].status === 'fulfilled') this.articulos = results[2].value.data || [];
+                if (results[3].status === 'fulfilled') this.supervisores = results[3].value.data || [];
+                if (results[4].status === 'fulfilled') this.viajes = results[4].value.data || [];
+                if (results[5].status === 'fulfilled') this.preciosProveedores = results[5].value.data || [];
             } catch (error) {
                 console.error('Error cargando catálogos:', error);
             } finally {

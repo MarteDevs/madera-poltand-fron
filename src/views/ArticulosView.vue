@@ -263,7 +263,15 @@ const cargar = async () => {
   cargando.value = true;
   try {
     await catStore.cargarCatalogos();
-    articulos.value = catStore.articulos;
+    articulos.value = catStore.articulos || [];
+    if (articulos.value.length === 0) {
+      try {
+        const res = await api.get('/articulos');
+        articulos.value = res.data || [];
+      } catch (e) {
+        console.error('Error cargando artículos directo:', e);
+      }
+    }
     if (!proveedorSeleccionadoId.value && catStore.proveedores.length > 0) {
       const carvajal = catStore.proveedores.find(p => p.nombre?.toUpperCase().includes('CARBAJAL'));
       proveedorSeleccionadoId.value = carvajal ? carvajal.id : catStore.proveedores[0].id;
