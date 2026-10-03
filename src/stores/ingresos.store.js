@@ -7,6 +7,7 @@ export const useIngresosStore = defineStore('ingresos', {
         historial: [],
         detalleActual: [],
         cargando: false,
+        cargandoHistorial: false,
         cargandoDetalle: false,
         error: null,
         borrador: null, // { form, seleccionados, cantidades, extras, modoEdicion, ingresoEditId }

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import api from '../api/axios';
 
+let cargaEnProgreso = null;
+
 export const useCatalogosStore = defineStore('catalogos', {
     state: () => ({
         minas: [],
@@ -9,31 +11,51 @@ export const useCatalogosStore = defineStore('catalogos', {
         supervisores: [],
         viajes: [],
         preciosProveedores: [],
-        cargando: false
+        cargando: false,
+        ultimaCarga: null
     }),
     actions: {
-        async cargarCatalogos() {
-            this.cargando = true;
-            try {
-                const results = await Promise.allSettled([
-                    api.get('/minas'),
-                    api.get('/proveedores'),
-                    api.get('/articulos'),
-                    api.get('/supervisores'),
-                    api.get('/viajes'),
-                    api.get('/articulos/precios-proveedores')
-                ]);
-                if (results[0].status === 'fulfilled') this.minas = results[0].value.data || [];
-                if (results[1].status === 'fulfilled') this.proveedores = results[1].value.data || [];
-                if (results[2].status === 'fulfilled') this.articulos = results[2].value.data || [];
-                if (results[3].status === 'fulfilled') this.supervisores = results[3].value.data || [];
-                if (results[4].status === 'fulfilled') this.viajes = results[4].value.data || [];
-                if (results[5].status === 'fulfilled') this.preciosProveedores = results[5].value.data || [];
-            } catch (error) {
-                console.error('Error cargando catálogos:', error);
-            } finally {
-                this.cargando = false;
+        async cargarCatalogos(forzar = false) {
+            const TTL = 10 * 60 * 1000; // 10 minutos de caché
+            const ahora = Date.now();
+
+            // Reutilizar datos en memoria si están dentro del TTL y no se fuerza
+            if (!forzar && this.minas.length > 0 && this.ultimaCarga && (ahora - this.ultimaCarga < TTL)) {
+                return;
             }
+
+            // Si ya hay una carga en progreso, reutilizar la misma promesa (evita peticiones duplicadas)
+            if (cargaEnProgreso) {
+                return cargaEnProgreso;
+            }
+
+            this.cargando = true;
+            cargaEnProgreso = (async () => {
+                try {
+                    const results = await Promise.allSettled([
+                        api.get('/minas'),
+                        api.get('/proveedores'),
+                        api.get('/articulos'),
+                        api.get('/supervisores'),
+                        api.get('/viajes'),
+                        api.get('/articulos/precios-proveedores')
+                    ]);
+                    if (results[0].status === 'fulfilled') this.minas = results[0].value.data || [];
+                    if (results[1].status === 'fulfilled') this.proveedores = results[1].value.data || [];
+                    if (results[2].status === 'fulfilled') this.articulos = results[2].value.data || [];
+                    if (results[3].status === 'fulfilled') this.supervisores = results[3].value.data || [];
+                    if (results[4].status === 'fulfilled') this.viajes = results[4].value.data || [];
+                    if (results[5].status === 'fulfilled') this.preciosProveedores = results[5].value.data || [];
+                    this.ultimaCarga = Date.now();
+                } catch (error) {
+                    console.error('Error cargando catálogos:', error);
+                } finally {
+                    this.cargando = false;
+                    cargaEnProgreso = null;
+                }
+            })();
+
+            return cargaEnProgreso;
         },
 
         getPrecio(articulo_id, proveedor_id) {

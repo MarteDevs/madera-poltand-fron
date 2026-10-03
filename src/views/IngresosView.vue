@@ -794,8 +794,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { Modal } from 'bootstrap';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import PageLayout from '../components/PageLayout.vue';
@@ -1227,6 +1225,9 @@ const formatDate = () => {
 const exportarPendientesExcel = async () => {
   if (store.pendientes.length === 0) return;
 
+  const { default: ExcelJS } = await import('exceljs');
+  const { saveAs } = await import('file-saver');
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Madera Poltand ERP';
   const ws = workbook.addWorksheet('Pendientes Entrega');
@@ -1320,6 +1321,9 @@ const exportarHistorialExcel = async () => {
     alert("No hay datos para exportar o ocurrió un error");
     return;
   }
+
+  const { default: ExcelJS } = await import('exceljs');
+  const { saveAs } = await import('file-saver');
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Madera Poltand ERP';

@@ -1,37 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.store'
 
-import LoginView from '../views/LoginView.vue'
-import DashboardView from '../views/DashboardView.vue'
-import RequerimientosView from '../views/RequerimientosView.vue'
-import IngresosView from '../views/IngresosView.vue'
-import ArticulosView from '../views/ArticulosView.vue'
-import MinasView from '../views/MinasView.vue'
-import ProveedoresView from '../views/ProveedoresView.vue'
-import SupervisoresView from '../views/SupervisoresView.vue'
-import UsuariosView from '../views/UsuariosView.vue'
-import AnalisisView from '../views/AnalisisView.vue'
-import ViajesView from '../views/ViajesView.vue'
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/login', name: 'login', component: LoginView },
+    { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
     {
       path: '/',
       redirect: '/dashboard',
       meta: { requiereAuth: true }
     },
-    { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiereAuth: true } },
-    { path: '/requerimientos', name: 'requerimientos', component: RequerimientosView, meta: { requiereAuth: true } },
-    { path: '/ingresos', name: 'ingresos', component: IngresosView, meta: { requiereAuth: true } },
-    { path: '/analisis', name: 'analisis', component: AnalisisView, meta: { requiereAuth: true } },
-    { path: '/articulos', name: 'articulos', component: ArticulosView, meta: { requiereAuth: true } },
-    { path: '/minas', name: 'minas', component: MinasView, meta: { requiereAuth: true } },
-    { path: '/proveedores', name: 'proveedores', component: ProveedoresView, meta: { requiereAuth: true } },
-    { path: '/supervisores', name: 'supervisores', component: SupervisoresView, meta: { requiereAuth: true } },
-    { path: '/viajes', name: 'viajes', component: ViajesView, meta: { requiereAuth: true } },
-    { path: '/usuarios', name: 'usuarios', component: UsuariosView, meta: { requiereAuth: true, requiereAdmin: true } },
+    { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiereAuth: true } },
+    { path: '/requerimientos', name: 'requerimientos', component: () => import('../views/RequerimientosView.vue'), meta: { requiereAuth: true } },
+    { path: '/ingresos', name: 'ingresos', component: () => import('../views/IngresosView.vue'), meta: { requiereAuth: true } },
+    { path: '/analisis', name: 'analisis', component: () => import('../views/AnalisisView.vue'), meta: { requiereAuth: true } },
+    { path: '/articulos', name: 'articulos', component: () => import('../views/ArticulosView.vue'), meta: { requiereAuth: true } },
+    { path: '/minas', name: 'minas', component: () => import('../views/MinasView.vue'), meta: { requiereAuth: true } },
+    { path: '/proveedores', name: 'proveedores', component: () => import('../views/ProveedoresView.vue'), meta: { requiereAuth: true } },
+    { path: '/supervisores', name: 'supervisores', component: () => import('../views/SupervisoresView.vue'), meta: { requiereAuth: true } },
+    { path: '/viajes', name: 'viajes', component: () => import('../views/ViajesView.vue'), meta: { requiereAuth: true } },
+    { path: '/usuarios', name: 'usuarios', component: () => import('../views/UsuariosView.vue'), meta: { requiereAuth: true, requiereAdmin: true } },
   ]
 })
 

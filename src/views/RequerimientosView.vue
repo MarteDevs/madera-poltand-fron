@@ -470,8 +470,6 @@
 <script setup>
 import { ref, nextTick, onMounted, computed, watch } from 'vue';
 import { Modal } from 'bootstrap';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import PageLayout from '../components/PageLayout.vue';
@@ -871,6 +869,9 @@ const xlFormatDate = () => {
 const exportarExcel = async () => {
   if (store.historial.length === 0) return;
 
+  const { default: ExcelJS } = await import('exceljs');
+  const { saveAs } = await import('file-saver');
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Madera Poltand ERP';
   const ws = workbook.addWorksheet('Requerimientos');
@@ -948,6 +949,9 @@ const exportarExcelDetallado = async () => {
 
   const detalles = await store.getHistorialDetallado();
   if (!detalles || detalles.length === 0) return;
+
+  const { default: ExcelJS } = await import('exceljs');
+  const { saveAs } = await import('file-saver');
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Madera Poltand ERP';
