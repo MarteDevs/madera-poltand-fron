@@ -4,7 +4,13 @@ import api from '../api/axios';
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         token: localStorage.getItem('token') || null,
-        usuario: JSON.parse(localStorage.getItem('usuario')) || null
+        usuario: (() => {
+            try {
+                return JSON.parse(localStorage.getItem('usuario')) || null;
+            } catch {
+                return null;
+            }
+        })()
     }),
     getters: {
         estaAutenticado: (state) => !!state.token,

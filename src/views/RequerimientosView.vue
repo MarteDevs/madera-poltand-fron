@@ -503,6 +503,14 @@ const cargandoEdicion = ref(false);
 // ---- Filtros y Búsqueda ----
 const filtroEstado = ref('TODOS');
 const buscarTexto = ref('');
+const buscarTextoDebounced = ref('');
+let timerBuscar = null;
+watch(buscarTexto, (val) => {
+  clearTimeout(timerBuscar);
+  timerBuscar = setTimeout(() => {
+    buscarTextoDebounced.value = val;
+  }, 200);
+});
 const filtroMes = ref('');
 const filtroAnio = ref('');
 const filtroProveedor = ref('');
@@ -534,59 +542,41 @@ const aniosDisponibles = computed(() => {
   return [...new Set(anios)].sort((a, b) => b - a);
 });
 
-const countTodos = computed(() => {
-  return store.historial.filter(r => {
-    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
-    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
-    return matchMes && matchAnio && matchProv && matchTipo;
-  }).length;
+// Optimización: Un solo recorrido para contar todos los estados
+const conteosEstado = computed(() => {
+  const counts = { TODOS: 0, PENDIENTE: 0, PARCIAL: 0, COMPLETADO: 0, CANCELADO: 0 };
+  const mes = filtroMes.value;
+  const anio = filtroAnio.value;
+  const prov = filtroProveedor.value;
+  const tipo = filtroTipoPago.value;
+
+  for (let i = 0; i < store.historial.length; i++) {
+    const r = store.historial[i];
+    const matchMes = !mes || (r.fecha && r.fecha.substring(5, 7) === mes);
+    const matchAnio = !anio || (r.fecha && r.fecha.substring(0, 4) === anio);
+    const matchProv = !prov || (r.proveedores || '').includes(prov);
+    const matchTipo = !tipo || r.tipo_pago === tipo;
+
+    if (matchMes && matchAnio && matchProv && matchTipo) {
+      counts.TODOS++;
+      if (counts[r.estado] !== undefined) {
+        counts[r.estado]++;
+      }
+    }
+  }
+  return counts;
 });
-const countPendiente = computed(() => {
-  return store.historial.filter(r => {
-    if (r.estado !== 'PENDIENTE') return false;
-    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
-    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
-    return matchMes && matchAnio && matchProv && matchTipo;
-  }).length;
-});
-const countParcial = computed(() => {
-  return store.historial.filter(r => {
-    if (r.estado !== 'PARCIAL') return false;
-    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
-    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
-    return matchMes && matchAnio && matchProv && matchTipo;
-  }).length;
-});
-const countCompletado = computed(() => {
-  return store.historial.filter(r => {
-    if (r.estado !== 'COMPLETADO') return false;
-    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
-    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
-    return matchMes && matchAnio && matchProv && matchTipo;
-  }).length;
-});
-const countCancelado = computed(() => {
-  return store.historial.filter(r => {
-    if (r.estado !== 'CANCELADO') return false;
-    const matchMes = !filtroMes.value || (r.fecha && r.fecha.substring(5, 7) === filtroMes.value);
-    const matchAnio = !filtroAnio.value || (r.fecha && r.fecha.substring(0, 4) === filtroAnio.value);
-    const matchProv = !filtroProveedor.value || (r.proveedores || '').includes(filtroProveedor.value);
-    const matchTipo = !filtroTipoPago.value || r.tipo_pago === filtroTipoPago.value;
-    return matchMes && matchAnio && matchProv && matchTipo;
-  }).length;
-});
+
+const countTodos = computed(() => conteosEstado.value.TODOS);
+const countPendiente = computed(() => conteosEstado.value.PENDIENTE);
+const countParcial = computed(() => conteosEstado.value.PARCIAL);
+const countCompletado = computed(() => conteosEstado.value.COMPLETADO);
+const countCancelado = computed(() => conteosEstado.value.CANCELADO);
 
 const limpiarFiltros = () => {
   filtroEstado.value = 'TODOS';
   buscarTexto.value = '';
+  buscarTextoDebounced.value = '';
   filtroMes.value = '';
   filtroAnio.value = '';
   filtroProveedor.value = '';
@@ -597,7 +587,7 @@ const historialFiltrado = computed(() => {
   return store.historial.filter(r => {
     const matchEstado = filtroEstado.value === 'TODOS' || r.estado === filtroEstado.value;
     
-    const text = buscarTexto.value.toLowerCase().trim();
+    const text = buscarTextoDebounced.value.toLowerCase().trim();
     const matchTexto = !text || 
       r.codigo_req.toLowerCase().includes(text) ||
       r.mina.toLowerCase().includes(text) ||
@@ -646,7 +636,7 @@ const paginasVisibles = computed(() => {
 });
 
 // Resetear página al cambiar filtros, historial o tamaño de página
-watch([filtroEstado, buscarTexto, porPagina, filtroMes, filtroAnio, filtroProveedor], () => { paginaActual.value = 1; });
+watch([filtroEstado, buscarTextoDebounced, porPagina, filtroMes, filtroAnio, filtroProveedor], () => { paginaActual.value = 1; });
 watch(() => store.historial.length, () => { paginaActual.value = 1; });
 
 // ---- Refs para navegación por teclado ----
@@ -691,12 +681,16 @@ const abrirModalCrear = async () => {
   siguienteCodigoReq.value = codigo || 'Desconocido (Guarde para generar)';
 };
 
-// Actualizar código en vivo si cambia la fecha mientras se crea uno nuevo
-watch(() => form.value.fecha, async (nuevaFecha) => {
+// Actualizar código en vivo si cambia la fecha mientras se crea uno nuevo (con debounce)
+let timerFecha = null;
+watch(() => form.value.fecha, (nuevaFecha) => {
   if (!modoEdicion.value && nuevaFecha) {
     siguienteCodigoReq.value = 'Calculando...';
-    const codigo = await store.getSiguienteCodigo(nuevaFecha);
-    siguienteCodigoReq.value = codigo || 'Desconocido (Guarde para generar)';
+    clearTimeout(timerFecha);
+    timerFecha = setTimeout(async () => {
+      const codigo = await store.getSiguienteCodigo(nuevaFecha);
+      siguienteCodigoReq.value = codigo || 'Desconocido (Guarde para generar)';
+    }, 300);
   }
 });
 

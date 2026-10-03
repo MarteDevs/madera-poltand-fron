@@ -325,7 +325,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
 import api from '../api/axios';
@@ -340,8 +340,23 @@ const articulos = ref([]);
 const articulosDesactivados = ref([]);
 const cargando = ref(true);
 const cargandoDesactivados = ref(false);
+
 const busqueda = ref('');
+const busquedaDebounced = ref('');
+let timerBusqueda = null;
+watch(busqueda, (val) => {
+  clearTimeout(timerBusqueda);
+  timerBusqueda = setTimeout(() => { busquedaDebounced.value = val; }, 200);
+});
+
 const busquedaDesactivados = ref('');
+const busquedaDesactivadosDebounced = ref('');
+let timerBusquedaDesact = null;
+watch(busquedaDesactivados, (val) => {
+  clearTimeout(timerBusquedaDesact);
+  timerBusquedaDesact = setTimeout(() => { busquedaDesactivadosDebounced.value = val; }, 200);
+});
+
 const proveedorSeleccionadoId = ref('');
 const modalRef = ref(null);
 const modalClonarRef = ref(null);
@@ -377,7 +392,7 @@ const ordenarPor = (columna) => {
 };
 
 const articulosFiltrados = computed(() => {
-  const query = busqueda.value.toLowerCase().trim();
+  const query = busquedaDebounced.value.toLowerCase().trim();
   let list = articulos.value.filter(a =>
     a.nombre?.toLowerCase().includes(query) ||
     (a.codigo && a.codigo.toLowerCase().includes(query))
@@ -409,7 +424,7 @@ const articulosFiltrados = computed(() => {
 });
 
 const articulosDesactivadosFiltrados = computed(() => {
-  const query = busquedaDesactivados.value.toLowerCase().trim();
+  const query = busquedaDesactivadosDebounced.value.toLowerCase().trim();
   let list = articulosDesactivados.value.filter(a =>
     a.nombre?.toLowerCase().includes(query) ||
     (a.codigo && a.codigo.toLowerCase().includes(query))

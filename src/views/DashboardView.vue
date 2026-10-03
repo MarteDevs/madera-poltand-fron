@@ -188,12 +188,15 @@ const fechaHoy = computed(() => {
 });
 
 onMounted(async () => {
+  // Cargar datos operativos vitales del Dashboard primero
   await Promise.all([
     reqStore.cargarHistorial(),
-    catStore.cargarCatalogos(),
     ingStore.cargarPendientes()
   ]);
   cargando.value = false;
+
+  // Precargar catálogos en segundo plano para calentar caché
+  catStore.cargarCatalogos();
 });
 
 const ultimos = computed(() => reqStore.historial.slice(0, 8));

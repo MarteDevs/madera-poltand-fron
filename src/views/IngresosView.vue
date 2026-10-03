@@ -926,6 +926,14 @@ const ingresoSeleccionado = ref(null);
 
 // ---- Paginación y Filtros Historial ----
 const filtroHistorialBuscar = ref('');
+const filtroHistorialBuscarDebounced = ref('');
+let timerHistorialBuscar = null;
+watch(filtroHistorialBuscar, (val) => {
+  clearTimeout(timerHistorialBuscar);
+  timerHistorialBuscar = setTimeout(() => {
+    filtroHistorialBuscarDebounced.value = val;
+  }, 200);
+});
 const filtroHistorialMina = ref('');
 const filtroHistorialViaje = ref('');
 const filtroHistorialProveedor = ref('');
@@ -969,6 +977,7 @@ const uniqueViajesHistorial = computed(() => {
 
 const limpiarFiltrosHistorial = () => {
   filtroHistorialBuscar.value = '';
+  filtroHistorialBuscarDebounced.value = '';
   filtroHistorialMina.value = '';
   filtroHistorialViaje.value = '';
   filtroHistorialProveedor.value = '';
@@ -978,7 +987,7 @@ const limpiarFiltrosHistorial = () => {
 };
 
 const historialFiltrado = computed(() => {
-  const q = filtroHistorialBuscar.value.trim().toLowerCase();
+  const q = filtroHistorialBuscarDebounced.value.trim().toLowerCase();
   const mina = filtroHistorialMina.value;
   const viaje = filtroHistorialViaje.value;
   const prov = filtroHistorialProveedor.value;
@@ -1012,7 +1021,7 @@ const historialPaginado = computed(() => {
   return historialFiltrado.value.slice(inicio, inicio + porPagina.value);
 });
 
-watch([filtroHistorialBuscar, filtroHistorialMina, filtroHistorialViaje, filtroHistorialProveedor, filtroHistorialTipoPago, filtroHistorialMes, filtroHistorialAnio], () => {
+watch([filtroHistorialBuscarDebounced, filtroHistorialMina, filtroHistorialViaje, filtroHistorialProveedor, filtroHistorialTipoPago, filtroHistorialMes, filtroHistorialAnio], () => {
   paginaActual.value = 1;
 });
 
