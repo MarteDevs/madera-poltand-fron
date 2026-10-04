@@ -1,10 +1,10 @@
 <template>
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000">
+    <div class="mp-toast-container" style="z-index: 2000">
         <TransitionGroup name="toast-slide">
             <div 
                 v-for="toast in toastStore.toasts" 
                 :key="toast.id"
-                class="mp-toast d-flex align-items-center gap-2 mb-2"
+                class="mp-toast d-flex align-items-center gap-2"
                 :class="`mp-toast--${toast.tipo}`"
                 role="alert"
             >
@@ -40,6 +40,24 @@ const iconClass = (tipo) => {
 </script>
 
 <style scoped>
+/* Top-center en vez de top-right: esa esquina coincide con el botón "x" de
+   cierre de los modales (modal-xl), y el toast (z-index 2000) lo tapaba e
+   interceptaba los clics, causando que se descartara el modal sin querer. */
+.mp-toast-container {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+}
+.mp-toast-container .mp-toast {
+    pointer-events: auto;
+}
+
 .mp-toast {
     min-width: 280px;
     max-width: 420px;
@@ -99,18 +117,19 @@ const iconClass = (tipo) => {
 
 /* Transition */
 .toast-slide-enter-active {
-    animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: slideInDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .toast-slide-leave-active {
-    animation: slideOutRight 0.3s ease both;
+    animation: slideOutUp 0.3s ease both;
+    position: absolute;
 }
 
-@keyframes slideInRight {
-    from { opacity: 0; transform: translateX(80px) scale(0.9); }
-    to { opacity: 1; transform: translateX(0) scale(1); }
+@keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-24px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes slideOutRight {
-    from { opacity: 1; transform: translateX(0); }
-    to { opacity: 0; transform: translateX(100px); }
+@keyframes slideOutUp {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-16px); }
 }
 </style>

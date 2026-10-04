@@ -6,7 +6,7 @@
 /* ── DESIGN TOKENS ── */
 :root {
   --mp-sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  --mp-sidebar-width: 76px;
+  --mp-sidebar-width: 232px;
   --mp-accent: #3b82f6;
   --mp-accent-hover: #2563eb;
   --mp-accent-glow: rgba(59, 130, 246, 0.25);
@@ -92,7 +92,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background: var(--mp-sidebar-bg);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   position: fixed;
   left: 0; top: 0; bottom: 0;
   z-index: var(--mp-z-sidebar);

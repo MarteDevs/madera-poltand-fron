@@ -12,19 +12,6 @@
       <li class="nav-item">
         <button
           class="nav-link"
-          :class="{ active: tabActiva === 'pendientes' }"
-          @click="tabActiva = 'pendientes'"
-        >
-          <i class="bi bi-hourglass-split me-2"></i>
-          Pendientes de Entrega
-          <span v-if="store.pendientes.length > 0" class="badge bg-warning text-dark ms-2">
-            {{ store.pendientes.length }}
-          </span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button
-          class="nav-link"
           :class="{ active: tabActiva === 'historial' }"
           @click="cambiarAHistorial"
         >
@@ -32,6 +19,19 @@
           Historial de Ingresos
           <span v-if="store.historial.length > 0" class="badge bg-secondary ms-2">
             {{ store.historial.length }}
+          </span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          :class="{ active: tabActiva === 'pendientes' }"
+          @click="tabActiva = 'pendientes'"
+        >
+          <i class="bi bi-hourglass-split me-2"></i>
+          Pendientes de Entrega
+          <span v-if="store.pendientes.length > 0" class="badge bg-warning text-dark ms-2">
+            {{ store.pendientes.length }}
           </span>
         </button>
       </li>
@@ -832,7 +832,7 @@ const opcionesViaje = computed(() =>
 );
 
 // Estado de tabs
-const tabActiva = ref('pendientes');
+const tabActiva = ref('historial');
 const esMinimizado = ref(false);
 
 const modoEdicion = ref(false);
@@ -1096,6 +1096,7 @@ watch([buscarReq, filtroMina, filtroProveedor, filtroCodigoReq], () => {
 onMounted(async () => {
   await Promise.all([
     store.cargarPendientes(),
+    store.cargarHistorial(),
     catalogStore.cargarCatalogos()
   ]);
   bsModal = new Modal(modalRef.value);

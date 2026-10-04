@@ -4,55 +4,62 @@
 
   <!-- Riel de navegación -->
   <aside class="mp-rail shadow-lg" :class="{ show: menuOpen }">
-    <div class="rail-logo" title="Madera Poltand ERP">
-      <i class="bi bi-tree-fill"></i>
+    <div class="rail-logo">
+      <div class="rail-logo-icon"><i class="bi bi-tree-fill"></i></div>
+      <span class="rail-logo-text">Madera Poltand</span>
     </div>
 
     <nav class="rail-nav">
-      <RouterLink to="/dashboard" class="rail-link" active-class="active" @click="closeOnMobile" title="Dashboard" aria-label="Dashboard">
-        <i class="bi bi-grid-1x2-fill"></i>
+      <RouterLink to="/dashboard" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Dashboard">
+        <i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span>
       </RouterLink>
-      <RouterLink to="/requerimientos" class="rail-link" active-class="active" @click="closeOnMobile" title="Requerimientos" aria-label="Requerimientos">
-        <i class="bi bi-clipboard2-plus-fill"></i>
+      <RouterLink to="/requerimientos" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Requerimientos">
+        <i class="bi bi-clipboard2-plus-fill"></i><span>Requerimientos</span>
       </RouterLink>
-      <RouterLink to="/ingresos" class="rail-link" active-class="active" @click="closeOnMobile" title="Ingresos" aria-label="Ingresos">
-        <i class="bi bi-truck-flatbed"></i>
+      <RouterLink to="/ingresos" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Ingresos">
+        <i class="bi bi-truck-flatbed"></i><span>Ingresos</span>
       </RouterLink>
-      <RouterLink to="/analisis" class="rail-link" active-class="active" @click="closeOnMobile" title="Análisis" aria-label="Análisis">
-        <i class="bi bi-bar-chart-fill"></i>
+      <RouterLink to="/analisis" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Análisis">
+        <i class="bi bi-bar-chart-fill"></i><span>Análisis</span>
       </RouterLink>
 
       <div class="rail-divider"></div>
 
-      <RouterLink to="/articulos" class="rail-link" active-class="active" @click="closeOnMobile" title="Artículos" aria-label="Artículos">
-        <i class="bi bi-box-seam"></i>
+      <RouterLink to="/articulos" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Artículos">
+        <i class="bi bi-box-seam"></i><span>Artículos</span>
       </RouterLink>
-      <RouterLink to="/minas" class="rail-link" active-class="active" @click="closeOnMobile" title="Minas" aria-label="Minas">
-        <i class="bi bi-geo-alt-fill"></i>
+      <RouterLink to="/minas" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Minas">
+        <i class="bi bi-geo-alt-fill"></i><span>Minas</span>
       </RouterLink>
-      <RouterLink to="/proveedores" class="rail-link" active-class="active" @click="closeOnMobile" title="Proveedores" aria-label="Proveedores">
-        <i class="bi bi-person-badge-fill"></i>
+      <RouterLink to="/proveedores" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Proveedores">
+        <i class="bi bi-person-badge-fill"></i><span>Proveedores</span>
       </RouterLink>
-      <RouterLink to="/supervisores" class="rail-link" active-class="active" @click="closeOnMobile" title="Supervisores" aria-label="Supervisores">
-        <i class="bi bi-people-fill"></i>
+      <RouterLink to="/supervisores" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Supervisores">
+        <i class="bi bi-people-fill"></i><span>Supervisores</span>
       </RouterLink>
-      <RouterLink to="/viajes" class="rail-link" active-class="active" @click="closeOnMobile" title="Viajes" aria-label="Viajes">
-        <i class="bi bi-signpost-2-fill"></i>
+      <RouterLink to="/viajes" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Viajes">
+        <i class="bi bi-signpost-2-fill"></i><span>Viajes</span>
       </RouterLink>
 
       <template v-if="esAdmin">
         <div class="rail-divider"></div>
-        <RouterLink to="/usuarios" class="rail-link" active-class="active" @click="closeOnMobile" title="Usuarios" aria-label="Usuarios">
-          <i class="bi bi-shield-lock-fill"></i>
+        <RouterLink to="/usuarios" class="rail-link" active-class="active" @click="closeOnMobile" aria-label="Usuarios">
+          <i class="bi bi-shield-lock-fill"></i><span>Usuarios</span>
         </RouterLink>
       </template>
     </nav>
 
     <div class="rail-footer">
-      <button @click="logout" class="rail-link rail-logout" title="Cerrar sesión" aria-label="Cerrar sesión">
-        <i class="bi bi-box-arrow-left"></i>
+      <div class="rail-user">
+        <div class="rail-avatar">{{ iniciales }}</div>
+        <div class="rail-user-info">
+          <span class="rail-user-name">{{ usuario?.nombre || 'Usuario' }}</span>
+          <span class="rail-user-role">{{ rolNombre }}</span>
+        </div>
+      </div>
+      <button @click="logout" class="rail-link rail-logout" aria-label="Cerrar sesión">
+        <i class="bi bi-box-arrow-left"></i><span>Cerrar sesión</span>
       </button>
-      <div class="rail-avatar" :title="`${usuario?.nombre || ''} — ${rolNombre}`">{{ iniciales }}</div>
     </div>
   </aside>
 </template>
@@ -112,53 +119,74 @@ defineExpose({ toggleMenu });
 
 <style scoped>
 .rail-logo {
-  width: 40px; height: 40px;
-  margin: 16px auto 12px;
-  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px 14px;
+  flex-shrink: 0;
+}
+.rail-logo-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(59,130,246,0.35);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.rail-logo:hover {
+.rail-logo:hover .rail-logo-icon {
   transform: rotate(-8deg) scale(1.05);
+}
+.rail-logo-text {
+  color: #f1f5f9;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .rail-nav {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
-  padding: 4px 0;
+  padding: 4px 12px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .rail-divider {
-  width: 28px;
   height: 1px;
   background: rgba(255,255,255,0.08);
-  margin: 8px 0;
+  margin: 8px 4px;
 }
 
 .rail-link {
-  width: 44px; height: 44px;
-  border-radius: 12px;
+  width: 100%; height: 42px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  padding: 0 12px;
   color: #94a3b8;
-  font-size: 1.2rem;
+  font-size: 0.88rem;
+  font-weight: 500;
   border: none;
   background: transparent;
   cursor: pointer;
   position: relative;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rail-link i {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .rail-link:hover {
@@ -174,7 +202,7 @@ defineExpose({ toggleMenu });
 .rail-link.active::before {
   content: '';
   position: absolute;
-  left: -10px; top: 50%;
+  left: -12px; top: 50%;
   transform: translateY(-50%);
   width: 3px; height: 20px;
   background: var(--mp-accent);
@@ -184,9 +212,35 @@ defineExpose({ toggleMenu });
 .rail-footer {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  padding: 12px 12px 18px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.rail-user {
+  display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 0 18px;
+  padding: 8px 4px;
+}
+
+.rail-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.rail-user-name {
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rail-user-role {
+  color: #64748b;
+  font-size: 0.72rem;
 }
 
 .rail-logout {

@@ -65,80 +65,68 @@
       </div>
     </div>
 
-    <!-- Modal Formulario -->
-    <div class="modal fade" id="modalUsuario" tabindex="-1" ref="modalRef">
-      <div class="modal-dialog">
-        <div class="modal-content border-0 shadow-lg">
-          <div class="modal-header border-bottom-0 pb-0">
-            <h5 class="modal-title fw-bold text-dark">
-              {{ form.id ? 'Editar Usuario' : 'Nuevo Usuario' }}
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="guardar">
-              <div class="mb-3">
-                <label class="form-label fw-medium text-secondary" style="font-size: 0.9rem;">Nombre Completo</label>
-                <input type="text" class="form-control" v-model="form.nombre" required placeholder="Ej. Juan Pérez">
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-medium text-secondary" style="font-size: 0.9rem;">Usuario (Username)</label>
-                <input type="text" class="form-control" v-model="form.username" required placeholder="Ej. jperez">
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-medium text-secondary" style="font-size: 0.9rem;">Rol en el Sistema</label>
-                <select class="form-select" v-model="form.rol_id" required>
-                  <option value="" disabled>Seleccione un rol...</option>
-                  <option :value="1">Superadmin</option>
-                  <option :value="2">Administrador</option>
-                  <option :value="3">Operador</option>
-                </select>
-              </div>
-              
-              <div class="mb-2">
-                <label class="form-label fw-medium text-secondary d-flex justify-content-between align-items-center" style="font-size: 0.9rem;">
-                  Contraseña
-                  <span v-if="form.id" class="badge bg-light text-muted border fw-normal" style="font-size: 0.7rem;">Opcional si no se requiere cambio</span>
-                </label>
-                <input type="password" class="form-control" v-model="form.password" :required="!form.id" placeholder="••••••••">
-              </div>
-
-              <!-- Mensajes de Error/Exito -->
-              <div v-if="mensajeError" class="alert alert-danger mt-3 py-2" style="font-size: 0.9rem;">
-                <i class="bi bi-exclamation-circle me-1"></i> {{ mensajeError }}
-              </div>
-              <div v-if="mensajeExito" class="alert alert-success mt-3 py-2" style="font-size: 0.9rem;">
-                <i class="bi bi-check-circle me-1"></i> {{ mensajeExito }}
-              </div>
-
-              <div class="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal" :disabled="guardando">Cancelar</button>
-                <button type="submit" class="btn btn-primary px-4" :disabled="guardando">
-                  <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
-                  {{ guardando ? 'Guardando...' : 'Guardar' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+    <!-- Panel de alta/edición -->
+    <CrudDrawer
+      :open="drawerOpen"
+      :title="form.id ? 'Editar Usuario' : 'Nuevo Usuario'"
+      :can-submit="isFormValid"
+      :submitting="guardando"
+      @close="drawerOpen = false"
+      @submit="guardar"
+    >
+      <CrudField
+        label="Nombre Completo"
+        required
+        v-model="form.nombre"
+        placeholder="Ej. Juan Pérez"
+      />
+      <CrudField
+        label="Usuario (Username)"
+        required
+        v-model="form.username"
+        placeholder="Ej. jperez"
+      />
+      <div class="cf-field">
+        <label class="mp-form-label">Rol en el Sistema <span style="color:var(--mp-danger);">*</span></label>
+        <select class="form-select mp-input" v-model="form.rol_id" required>
+          <option value="" disabled>Seleccione un rol...</option>
+          <option :value="1">Superadmin</option>
+          <option :value="2">Administrador</option>
+          <option :value="3">Operador</option>
+        </select>
       </div>
-    </div>
+      <div class="cf-field">
+        <label class="mp-form-label d-flex justify-content-between align-items-center">
+          Contraseña
+          <span v-if="form.id" class="badge bg-light text-muted border fw-normal" style="font-size: 0.7rem; text-transform: none;">Opcional si no se requiere cambio</span>
+        </label>
+        <input type="password" class="form-control mp-input" v-model="form.password" :required="!form.id" placeholder="••••••••">
+      </div>
+
+      <!-- Mensajes de Error/Exito -->
+      <div v-if="mensajeError" class="alert alert-danger py-2" style="font-size: 0.85rem;">
+        <i class="bi bi-exclamation-circle me-1"></i> {{ mensajeError }}
+      </div>
+      <div v-if="mensajeExito" class="alert alert-success py-2" style="font-size: 0.85rem;">
+        <i class="bi bi-check-circle me-1"></i> {{ mensajeExito }}
+      </div>
+    </CrudDrawer>
 
   </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
+import CrudDrawer from '../components/CrudDrawer.vue';
+import CrudField from '../components/CrudField.vue';
 import { useUsuariosStore } from '../stores/usuarios.store';
 import { useAuthStore } from '../stores/auth.store';
 import { confirmarConSwal, notificarConSwal } from '../utils/confirmUi';
 
 const store = useUsuariosStore();
 const authStore = useAuthStore();
-const modalRef = ref(null);
-let bsModal = null;
+const drawerOpen = ref(false);
 
 const busqueda = ref('');
 const guardando = ref(false);
@@ -155,8 +143,14 @@ const form = ref({
 
 onMounted(() => {
   store.fetchUsuarios();
-  bsModal = new Modal(modalRef.value);
 });
+
+const isFormValid = computed(() =>
+  form.value.nombre.trim().length > 0 &&
+  form.value.username.trim().length > 0 &&
+  !!form.value.rol_id &&
+  (!!form.value.id || form.value.password.trim().length > 0)
+);
 
 // Getter computed filter
 const usuariosFiltrados = computed(() => {
@@ -186,7 +180,7 @@ const abrirModal = (user = null) => {
   } else {
     form.value = { id: null, nombre: '', username: '', password: '', rol_id: '' };
   }
-  bsModal.show();
+  drawerOpen.value = true;
 };
 
 const guardar = async () => {
@@ -205,7 +199,7 @@ const guardar = async () => {
 
   if (res.success) {
     mensajeExito.value = res.mensaje;
-    setTimeout(() => bsModal.hide(), 1200);
+    setTimeout(() => { drawerOpen.value = false; }, 1200);
   } else {
     mensajeError.value = res.mensaje;
   }

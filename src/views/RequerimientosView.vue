@@ -32,15 +32,14 @@
         </div>
       </div>
 
-      <!-- Barra de filtros: Estado + búsqueda siempre visibles (son los más
-           usados); Mes/Año/Proveedor/Destino quedan detrás de "Más filtros" -->
+      <!-- Barra de filtros: todos los filtros visibles directamente -->
       <div class="req-filter-bar">
         <div class="d-flex align-items-center flex-wrap gap-2 w-100">
 
           <!-- Filtro de Estado -->
           <div class="filter-badge">
             <i class="bi bi-funnel-fill text-primary me-1"></i>
-            <select v-model="filtroEstado" class="filter-select-clean" style="width: 200px;">
+            <select v-model="filtroEstado" class="filter-select-clean" style="width: 190px;">
               <option value="TODOS">Todos los estados ({{ countTodos }})</option>
               <option value="PENDIENTE">Pendientes ({{ countPendiente }})</option>
               <option value="PARCIAL">Parciales ({{ countParcial }})</option>
@@ -49,52 +48,48 @@
             </select>
           </div>
 
-          <!-- Más filtros (Mes/Año/Proveedor/Destino) -->
-          <div class="req-more-filters">
-            <button
-              class="btn btn-sm btn-outline-secondary position-relative"
-              style="border-radius: 20px; padding: 5px 15px;"
-              @click="mostrarMasFiltros = !mostrarMasFiltros"
-            >
-              <i class="bi bi-sliders me-1"></i> Más filtros
-              <span v-if="filtrosSecundariosActivos > 0" class="badge rounded-pill bg-primary ms-1">{{ filtrosSecundariosActivos }}</span>
-            </button>
-
-            <div v-if="mostrarMasFiltros" class="req-filters-panel">
-              <div class="req-filters-panel-row">
-                <label><i class="bi bi-calendar3 text-success me-1"></i>Mes</label>
-                <select v-model="filtroMes" class="form-select form-select-sm">
-                  <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">{{ m.label }}</option>
-                </select>
-              </div>
-              <div class="req-filters-panel-row">
-                <label><i class="bi bi-calendar-event text-warning me-1"></i>Año</label>
-                <select v-model="filtroAnio" class="form-select form-select-sm">
-                  <option value="">Todos los años</option>
-                  <option v-for="a in aniosDisponibles" :key="a" :value="a">{{ a }}</option>
-                </select>
-              </div>
-              <div class="req-filters-panel-row">
-                <label><i class="bi bi-building text-info me-1"></i>Proveedor</label>
-                <select v-model="filtroProveedor" class="form-select form-select-sm">
-                  <option value="">Todos los proveedores</option>
-                  <option v-for="p in catStore.proveedores" :key="p.id" :value="p.nombre">{{ p.nombre }}</option>
-                </select>
-              </div>
-              <div class="req-filters-panel-row">
-                <label><i class="bi bi-pin-map-fill text-warning me-1"></i>Destino</label>
-                <select v-model="filtroTipoPago" class="form-select form-select-sm">
-                  <option value="">Todo destino</option>
-                  <option value="DEPOSITO">Depósito</option>
-                  <option value="DIRECTO">Directo</option>
-                </select>
-              </div>
-              <button class="btn btn-sm btn-outline-secondary w-100" @click="limpiarFiltros"
-                :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio && !filtroProveedor && !filtroTipoPago">
-                <i class="bi bi-trash3 me-1"></i> Limpiar todos los filtros
-              </button>
-            </div>
+          <!-- Mes -->
+          <div class="filter-badge">
+            <i class="bi bi-calendar3 text-success me-1"></i>
+            <select v-model="filtroMes" class="filter-select-clean" style="width: 140px;">
+              <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">{{ m.label }}</option>
+            </select>
           </div>
+
+          <!-- Año -->
+          <div class="filter-badge">
+            <i class="bi bi-calendar-event text-warning me-1"></i>
+            <select v-model="filtroAnio" class="filter-select-clean" style="width: 130px;">
+              <option value="">Todos los años</option>
+              <option v-for="a in aniosDisponibles" :key="a" :value="a">{{ a }}</option>
+            </select>
+          </div>
+
+          <!-- Proveedor -->
+          <div class="filter-badge">
+            <i class="bi bi-building text-info me-1"></i>
+            <select v-model="filtroProveedor" class="filter-select-clean" style="width: 170px;">
+              <option value="">Todos los proveedores</option>
+              <option v-for="p in catStore.proveedores" :key="p.id" :value="p.nombre">{{ p.nombre }}</option>
+            </select>
+          </div>
+
+          <!-- Destino -->
+          <div class="filter-badge">
+            <i class="bi bi-pin-map-fill text-warning me-1"></i>
+            <select v-model="filtroTipoPago" class="filter-select-clean" style="width: 140px;">
+              <option value="">Todo destino</option>
+              <option value="DEPOSITO">Depósito</option>
+              <option value="DIRECTO">Directo</option>
+            </select>
+          </div>
+
+          <!-- Limpiar filtros -->
+          <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
+            @click="limpiarFiltros"
+            :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio && !filtroProveedor && !filtroTipoPago">
+            <i class="bi bi-trash3 me-1"></i> Limpiar
+          </button>
 
           <!-- Buscador -->
           <div class="req-search-box ms-auto">
@@ -217,7 +212,7 @@
 
     <!-- ====== MODAL CREAR / EDITAR ====== -->
     <div class="modal fade" id="modalCrear" tabindex="-1" ref="modalCrearRef">
-      <div class="modal-dialog modal-xl" style="max-width:1300px;">
+      <div class="modal-dialog modal-xl" style="max-width:1440px;">
         <div class="modal-content" style="height:88vh; display:flex; flex-direction:column;">
           <div class="modal-header">
             <h5 class="modal-title fw-semibold">
@@ -230,10 +225,14 @@
             <div class="row g-3 mb-4">
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Fecha</label>
-                <input type="date" class="form-control" v-model="form.fecha" required
+                <input type="date" class="form-control" :class="{ 'is-invalid': fechaInvalida }" v-model="form.fecha" required
                   ref="fechaRef"
+                  @blur="fechaTouched = true"
                   @keydown.enter.prevent="() => minaRef?.focusOpen()"
                 />
+                <div v-if="fechaInvalida" class="text-danger mt-1" style="font-size:0.78rem;">
+                  <i class="bi bi-exclamation-circle me-1"></i>Ingresa una fecha válida.
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-medium" style="font-size:0.85rem;">Mina</label>
@@ -303,50 +302,49 @@
                 Agrega al menos un artículo al pedido
               </div>
               <div v-for="(linea, i) in form.detalles" :key="i" class="card shadow-sm border-0 req-item-card">
-                <div class="card-body p-2">
-                  <div class="row g-2 align-items-end">
+                <div class="card-body p-3">
+                  <div class="row g-3 align-items-end">
                     <div class="col-md-5">
-                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Artículo</label>
+                      <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Artículo</label>
                       <SearchableSelect
                         :ref="el => { if(el) articuloRefs[i] = el }"
                         v-model="linea.articulo_id"
                         :options="catStore.articulos"
                         placeholder="Seleccionar artículo"
-                        size="sm"
                         @update:modelValue="onArticuloChange(linea)"
                         @navigate="() => nextTick(() => cantidadRefs[i]?.focus())"
                       />
                     </div>
                     <div class="col-md-2">
-                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Cantidad</label>
-                      <input type="number" class="form-control form-control-sm fw-bold border-2 border-primary bg-light-subtle"
+                      <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Cantidad</label>
+                      <input type="number" class="form-control fw-bold border-2 border-primary bg-light-subtle"
                         :ref="el => { if(el) cantidadRefs[i] = el }"
                         v-model.number="linea.cantidad" min="1"
-                        style="font-size: 0.8rem; height: 28px;"
+                        style="font-size: 0.9rem; height: 38px;"
                         @keydown.enter.prevent="() => nextTick(() => precioProvRefs[i]?.focus())"
                       />
                     </div>
                     <div class="col-md-2">
-                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">P. Prov (S/.)</label>
-                      <input type="number" class="form-control form-control-sm"
+                      <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">P. Prov (S/.)</label>
+                      <input type="number" class="form-control"
                         :ref="el => { if(el) precioProvRefs[i] = el }"
                         v-model.number="linea.precio_proveedor" min="0" step="0.01"
-                        style="color:#2563eb; font-weight:600; font-size: 0.8rem; height: 28px;"
+                        style="color:#2563eb; font-weight:600; font-size: 0.9rem; height: 38px;"
                         @keydown.enter.prevent="() => nextTick(() => precioMinaRefs[i]?.focus())"
                       />
                     </div>
                     <div class="col-md-2">
-                      <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">P. Mina (S/.)</label>
-                      <input type="number" class="form-control form-control-sm"
+                      <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">P. Mina (S/.)</label>
+                      <input type="number" class="form-control"
                         :ref="el => { if(el) precioMinaRefs[i] = el }"
                         v-model.number="linea.precio_mina" min="0" step="0.01"
-                        style="color:#16a34a; font-weight:600; font-size: 0.8rem; height: 28px;"
+                        style="color:#16a34a; font-weight:600; font-size: 0.9rem; height: 38px;"
                         @keydown.enter.prevent="agregarYFocus"
                       />
                     </div>
                     <div class="col-md-1 text-end">
-                      <button 
-                        class="btn btn-outline-danger border-0" 
+                      <button
+                        class="btn btn-outline-danger border-0"
                         @click="quitarLinea(i)"
                         :disabled="linea.entregado > 0"
                         :title="linea.entregado > 0 ? 'No se puede quitar porque ya tiene entregas' : 'Quitar línea'"
@@ -515,15 +513,6 @@ const filtroAnio = ref('');
 const filtroProveedor = ref('');
 const filtroTipoPago = ref('');
 
-// Hick's Law: con el estado + búsqueda alcanza para el 80% de los casos.
-// Mes/Año/Proveedor/Destino quedan agrupados detrás de "Más filtros" para no
-// mostrar 5 selects simultáneos todo el tiempo.
-const mostrarMasFiltros = ref(false);
-const filtrosSecundariosActivos = computed(() =>
-  [filtroMes.value, filtroAnio.value, filtroProveedor.value, filtroTipoPago.value]
-    .filter(v => v !== '').length
-);
-
 const mesesOpciones = [
   { value: '', label: 'Todos los meses' },
   { value: '01', label: 'Enero' },
@@ -647,6 +636,10 @@ const paginasVisibles = computed(() => {
 watch([filtroEstado, buscarTextoDebounced, porPagina, filtroMes, filtroAnio, filtroProveedor], () => { paginaActual.value = 1; });
 watch(() => store.historial.length, () => { paginaActual.value = 1; });
 
+// ---- Validación de fecha ----
+const fechaTouched = ref(false);
+const fechaInvalida = computed(() => fechaTouched.value && !form.value.fecha);
+
 // ---- Refs para navegación por teclado ----
 const fechaRef      = ref(null);
 const minaRef       = ref(null);
@@ -673,6 +666,11 @@ onMounted(async () => {
   await Promise.all([store.cargarHistorial(), catStore.cargarCatalogos()]);
   bsModalCrear = new Modal(modalCrearRef.value);
   bsModalDetalles = new Modal(modalDetallesRef.value);
+
+  // Al abrir el modal, enfocar siempre el campo Fecha primero
+  modalCrearRef.value.addEventListener('shown.bs.modal', () => {
+    fechaRef.value?.focus();
+  });
 });
 
 const abrirModalCrear = async () => {
@@ -682,9 +680,10 @@ const abrirModalCrear = async () => {
   form.value = formVacio();
   mensajeError.value = '';
   mensajeExito.value = '';
+  fechaTouched.value = false;
   siguienteCodigoReq.value = 'Calculando...';
   bsModalCrear.show();
-  
+
   const codigo = await store.getSiguienteCodigo(form.value.fecha);
   siguienteCodigoReq.value = codigo || 'Desconocido (Guarde para generar)';
 };
@@ -721,6 +720,7 @@ const prepararEdicion = async (r) => {
   idRequerimientoEditar.value = r.id;
   mensajeError.value = '';
   mensajeExito.value = '';
+  fechaTouched.value = false;
   cargandoEdicion.value = true;
 
   // Buscamos los datos actuales para llenar el form
@@ -1025,8 +1025,14 @@ const onArticuloChange = (linea) => {
 const guardar = async () => {
   mensajeError.value = '';
   mensajeExito.value = '';
-  if (!form.value.fecha || !form.value.mina_id) {
-    mensajeError.value = 'Debes seleccionar fecha y mina.';
+  if (!form.value.fecha || isNaN(new Date(form.value.fecha).getTime())) {
+    fechaTouched.value = true;
+    mensajeError.value = 'La fecha es obligatoria y debe ser válida. Verifica el día, mes y año.';
+    fechaRef.value?.focus();
+    return;
+  }
+  if (!form.value.mina_id) {
+    mensajeError.value = 'Debes seleccionar una mina.';
     return;
   }
   if (!form.value.proveedor_id) {
@@ -1128,33 +1134,6 @@ const badgeClass = (estado) => {
 </script>
 
 <style scoped>
-/* Panel "Más filtros" (Hick's Law: agrupa Mes/Año/Proveedor/Destino detrás
-   de un solo botón en vez de 4 selects simultáneos en la barra). */
-.req-more-filters { position: relative; }
-.req-filters-panel {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 20;
-  width: 260px;
-  background: var(--mp-card-bg);
-  border: 1px solid var(--mp-border);
-  border-radius: var(--mp-radius-sm);
-  box-shadow: var(--mp-shadow-lg);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  animation: fadeInUp 0.15s ease both;
-}
-.req-filters-panel-row label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--mp-text-muted);
-  margin-bottom: 4px;
-}
-
 /* Estilos para las tarjetas de ítems del requerimiento */
 .req-item-card {
   transition: all 0.2s ease;
