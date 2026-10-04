@@ -50,9 +50,6 @@
             Items Pendientes de Entrega
             <span class="badge bg-warning text-dark ms-2">{{ store.pendientes.length }}</span>
           </h6>
-          <button class="btn btn-sm btn-outline-success border-success text-success" @click="exportarPendientesExcel" :disabled="store.pendientes.length === 0 || store.cargando">
-            <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar Excel
-          </button>
         </div>
         <div class="table-responsive">
           <table class="table mb-0">
@@ -200,9 +197,6 @@
               </select>
             </div>
             <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-success border-success text-success" @click="exportarHistorialExcel" :disabled="store.historial.length === 0 || store.cargandoHistorial">
-                <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar Excel
-              </button>
               <button class="btn btn-sm btn-outline-secondary" @click="store.cargarHistorial()" :disabled="store.cargandoHistorial">
                 <span v-if="store.cargandoHistorial" class="spinner-border spinner-border-sm me-1"></span>
                 <i v-else class="bi bi-arrow-clockwise me-1"></i>
@@ -266,7 +260,7 @@
                 <td class="text-center">
                   <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">{{ ing.total_items }}</span>
                 </td>
-                <td class="text-end fw-semibold text-success">{{ Number(ing.total_entregado).toFixed(2) }}</td>
+                <td class="text-end fw-semibold text-success">{{ fmtCant(ing.total_entregado) }}</td>
                 <td class="text-end fw-semibold" style="color:#2563eb;">S/ {{ Number(ing.total_proveedor).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}</td>
                 <td class="text-end fw-semibold" style="color:#16a34a;">S/ {{ Number(ing.total_mina).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}</td>
                 <td>
@@ -296,7 +290,7 @@
                   {{ (filtroHistorialBuscar || filtroHistorialMina || filtroHistorialViaje || filtroHistorialProveedor || filtroHistorialMes || filtroHistorialAnio || filtroHistorialTipoPago) ? 'TOTAL FILTRADO:' : 'TOTAL GENERAL:' }}
                 </td>
                 <td class="text-end fw-bold text-success">
-                  {{ historialFiltrado.reduce((s, ing) => s + Number(ing.total_entregado), 0).toFixed(2) }}
+                  {{ fmtCant(historialFiltrado.reduce((s, ing) => s + Number(ing.total_entregado), 0)) }}
                 </td>
                 <td class="text-end fw-bold" style="color:#2563eb;">
                   S/ {{ historialFiltrado.reduce((s, ing) => s + (ing.tipo_pago === 'DIRECTO' ? 0 : Number(ing.total_proveedor)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
@@ -763,17 +757,17 @@
                     <td class="text-end text-muted" style="font-size:0.75rem;">{{ Number(d.precio_mina).toFixed(2) }}</td>
                     <td class="text-end fw-semibold" style="color:#16a34a;">{{ (Number(d.precio_mina) * Number(d.cantidad_entregada)).toFixed(2) }}</td>
                     <td class="text-end fw-medium">{{ d.pedido || '—' }}</td>
-                    <td class="text-end fw-bold text-success">{{ Number(d.cantidad_entregada).toFixed(2) }}</td>
+                    <td class="text-end fw-bold text-success">{{ fmtCant(d.cantidad_entregada) }}</td>
                     <td class="text-end fw-semibold">
                       <template v-if="!d.es_extra">
                         <span v-if="(d.pedido - d.entregado_total) === 0" class="text-success fw-bold">
-                          <i class="bi bi-check-lg"></i> 0.00
+                          <i class="bi bi-check-lg"></i> 0
                         </span>
                         <span v-else-if="(d.pedido - d.entregado_total) < 0" class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
-                          +{{ Math.abs(d.pedido - d.entregado_total).toFixed(2) }} (Exceso)
+                          +{{ fmtCant(Math.abs(d.pedido - d.entregado_total)) }} (Exceso)
                         </span>
                         <span v-else class="text-danger fw-bold">
-                          {{ (d.pedido - d.entregado_total).toFixed(2) }}
+                          {{ fmtCant(d.pedido - d.entregado_total) }}
                         </span>
                       </template>
                       <span v-else class="text-muted small">Extra</span>
@@ -792,7 +786,7 @@
                     </td>
                     <td class="text-end fw-semibold" style="font-size:0.85rem;">Físico total:</td>
                     <td class="text-end fw-bold text-success">
-                      {{ store.detalleActual.reduce((s, d) => s + Number(d.cantidad_entregada), 0).toFixed(2) }}
+                      {{ fmtCant(store.detalleActual.reduce((s, d) => s + Number(d.cantidad_entregada), 0)) }}
                     </td>
                     <td></td>
                   </tr>
@@ -820,12 +814,15 @@ import { useAuthStore } from '../stores/auth.store';
 import { useIngresosStore } from '../stores/ingresos.store';
 import { useToastStore } from '../stores/toast.store';
 import { useCatalogosStore } from '../stores/catalogos.store';
-import * as excelUtil from '../utils/excelExport';
 
 const authStore = useAuthStore();
 const store = useIngresosStore();
 const toastStore = useToastStore();
 const catalogStore = useCatalogosStore();
+
+// Cantidades físicas (no monetarias): sin ceros decimales de relleno
+// ("35.00" -> "35"), pero conserva decimales reales si los hay ("35.5").
+const fmtCant = (v) => Number(v || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
 const modalRef = ref(null);
 const modalDetalleRef = ref(null);
 let bsModal = null;
@@ -1158,252 +1155,6 @@ watch(() => store.debeAbrirModal, (val) => {
     abrirModalIngreso();
   }
 });
-
-// ── Helpers comunes de estilo Excel ──
-const COLORS = {
-  headerBg: 'FF1B3A5C',    // Azul marino oscuro
-  headerFont: 'FFFFFFFF',
-  titleBg: 'FF0D47A1',
-  subtitleFont: 'FF5A6A7E',
-  altRow: 'FFF2F7FC',      // Azul claro alterno
-  totalBg: 'FF2D3748',     // Gris oscuro
-  totalFont: 'FFFFFFFF',
-  green: 'FF16A34A',
-  red: 'FFDC2626',
-  borderColor: 'FFD1D5DB'
-};
-
-const thinBorder = {
-  top: { style: 'thin', color: { argb: COLORS.borderColor } },
-  left: { style: 'thin', color: { argb: COLORS.borderColor } },
-  bottom: { style: 'thin', color: { argb: COLORS.borderColor } },
-  right: { style: 'thin', color: { argb: COLORS.borderColor } }
-};
-
-const addTitleBlock = (ws, _titulo, subtitulo, totalCols) =>
-  excelUtil.agregarBloqueTitulo(ws, subtitulo, totalCols, COLORS);
-
-const styleHeaderRow = (ws, rowNum, totalCols) =>
-  excelUtil.estilizarFilaCabecera(ws, rowNum, totalCols, COLORS);
-
-const styleDataRow = (ws, rowNum, totalCols, isAlt) =>
-  excelUtil.estilizarFilaDatos(ws, rowNum, totalCols, isAlt, COLORS);
-
-const setupPrintArea = (ws, totalCols, lastDataRow) => {
-  const lastCol = String.fromCharCode(64 + totalCols);
-  ws.pageSetup = {
-    orientation: 'landscape',
-    fitToPage: true,
-    fitToWidth: 1,
-    fitToHeight: 0,
-    paperSize: 9, // A4
-    margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }
-  };
-  ws.views = [{ state: 'frozen', ySplit: 5 }]; // Congelar hasta cabecera (fila 5)
-};
-
-const formatDate = () => excelUtil.formatearFechaArchivo();
-
-// ── Exportar Pendientes Excel ──
-const exportarPendientesExcel = async () => {
-  if (store.pendientes.length === 0) return;
-
-  const { default: ExcelJS } = await import('exceljs');
-  const { saveAs } = await import('file-saver');
-
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Madera Poltand ERP';
-  const ws = workbook.addWorksheet('Pendientes Entrega');
-  const TOTAL_COLS = 7;
-
-  // 1. Título
-  addTitleBlock(ws, 'MADERA POLTAND', 'Pendientes de Entrega', TOTAL_COLS);
-
-  // 2. Cabecera en fila 5
-  const headers = ['Código Req.', 'Mina', 'Artículo', 'Proveedor', 'Pedido', 'Entregado', 'Faltante'];
-  const widths = [15, 16, 30, 20, 11, 11, 11];
-  headers.forEach((h, i) => {
-    ws.getColumn(i + 1).width = widths[i];
-    ws.getCell(5, i + 1).value = h;
-  });
-  styleHeaderRow(ws, 5, TOTAL_COLS);
-
-  // 3. Datos desde fila 6
-  const dataStartRow = 6;
-  store.pendientes.forEach((item, idx) => {
-    const rowNum = dataStartRow + idx;
-    const row = ws.getRow(rowNum);
-    row.getCell(1).value = item.codigo_req;
-    row.getCell(2).value = item.mina;
-    row.getCell(3).value = item.articulo;
-    row.getCell(4).value = item.proveedor;
-    row.getCell(5).value = Number(item.pedido);
-    row.getCell(6).value = Number(item.entregado);
-    row.getCell(7).value = Number(item.faltante);
-
-    // Formato numérico
-    [5, 6, 7].forEach(c => { row.getCell(c).numFmt = '#,##0.00'; row.getCell(c).alignment = { horizontal: 'right' }; });
-    // Alineación texto
-    [1, 2, 3, 4].forEach(c => { row.getCell(c).alignment = { horizontal: 'left', vertical: 'middle' }; });
-
-    // Color condicional faltante
-    const faltante = Number(item.faltante);
-    if (faltante > 0) {
-      row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
-    } else {
-      row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
-    }
-
-    styleDataRow(ws, rowNum, TOTAL_COLS, idx % 2 === 1);
-  });
-
-  // 4. Fila de totales
-  const totalRow = dataStartRow + store.pendientes.length;
-  const lastDataRow = totalRow - 1;
-
-  // Merge A-D para "TOTALES"
-  ws.mergeCells(`A${totalRow}:D${totalRow}`);
-  ws.getCell(`A${totalRow}`).value = 'TOTALES';
-  ws.getCell(`A${totalRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
-  ws.getCell(`A${totalRow}`).alignment = { horizontal: 'right', vertical: 'middle' };
-
-  // Fórmulas SUM reales
-  ws.getCell(`E${totalRow}`).value = { formula: `SUM(E${dataStartRow}:E${lastDataRow})` };
-  ws.getCell(`F${totalRow}`).value = { formula: `SUM(F${dataStartRow}:F${lastDataRow})` };
-  ws.getCell(`G${totalRow}`).value = { formula: `SUM(G${dataStartRow}:G${lastDataRow})` };
-
-  // Estilo fila total
-  const tRow = ws.getRow(totalRow);
-  tRow.height = 26;
-  tRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    if (colNumber <= TOTAL_COLS) {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.totalBg } };
-      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.totalFont } };
-      cell.border = thinBorder;
-      if (colNumber >= 5) {
-        cell.numFmt = '#,##0.00';
-        cell.alignment = { horizontal: 'right', vertical: 'middle' };
-      }
-    }
-  });
-
-  // 5. Impresión
-  setupPrintArea(ws, TOTAL_COLS, totalRow);
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `MP_Pendientes_Entrega_${formatDate()}.xlsx`);
-};
-
-// ── Exportar Historial Detallado Excel ──
-const exportarHistorialExcel = async () => {
-  if (store.historial.length === 0) return;
-
-  const response = await store.exportarHistorialDetallado();
-  if (!response.success || !response.data || response.data.length === 0) {
-    alert("No hay datos para exportar o ocurrió un error");
-    return;
-  }
-
-  const { default: ExcelJS } = await import('exceljs');
-  const { saveAs } = await import('file-saver');
-
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Madera Poltand ERP';
-  const ws = workbook.addWorksheet('Historial Detallado');
-  const TOTAL_COLS = 17;
-
-  // 1. Título
-  addTitleBlock(ws, 'MADERA POLTAND', 'Historial de Ingresos Detallado', TOTAL_COLS);
-
-  // 2. Cabecera en fila 5
-  const headers = [
-    'Cód. Ingreso', 'Fecha', 'Viaje', 'Destino', 'Vale', 'Obs.',
-    'Req.', 'Mina', 'Artículo', 'Proveedor',
-    'P.Prov', 'T.Prov', 'P.Mina', 'T.Mina', 'Pedido', 'En Viaje', 'Faltante'
-  ];
-  const widths = [18, 10, 9, 10, 8, 14, 12, 12, 26, 16, 9, 10, 9, 10, 9, 9, 9];
-  headers.forEach((h, i) => {
-    ws.getColumn(i + 1).width = widths[i];
-    ws.getCell(5, i + 1).value = h;
-  });
-  styleHeaderRow(ws, 5, TOTAL_COLS);
-
-  // 3. Datos desde fila 6
-  const dataStartRow = 6;
-  const numCols = [11, 12, 13, 14, 15, 16, 17]; // Columnas numéricas shiftadas por +1
-
-  response.data.forEach((item, idx) => {
-    const rowNum = dataStartRow + idx;
-    const row = ws.getRow(rowNum);
-    
-    const precioProv = Number(item.precio_proveedor || 0);
-    const precioMina = Number(item.precio_mina || 0);
-    const cantEntregada = Number(item.cantidad_entregada || 0);
-
-    row.getCell(1).value = item.codigo_ingreso;
-    row.getCell(2).value = item.fecha_ingreso;
-    row.getCell(3).value = item.viaje || '';
-    row.getCell(4).value = item.tipo_pago === 'DEPOSITO' ? 'Depósito' : (item.tipo_pago === 'DIRECTO' ? 'Directo' : '');
-    row.getCell(5).value = item.vale || '';
-    row.getCell(6).value = item.observacion || '';
-    row.getCell(7).value = item.codigo_req;
-    row.getCell(8).value = item.mina || '';
-    row.getCell(9).value = item.articulo;
-    row.getCell(10).value = item.proveedor;
-    row.getCell(11).value = precioProv;
-    row.getCell(12).value = precioProv * cantEntregada; // T.Prov
-    row.getCell(13).value = precioMina;
-    row.getCell(14).value = precioMina * cantEntregada; // T.Mina
-    row.getCell(15).value = Number(item.pedido || 0);
-    row.getCell(16).value = cantEntregada;
-    row.getCell(17).value = Number(item.faltante || 0);
-
-    // Formato numérico y alineación
-    numCols.forEach(c => {
-      row.getCell(c).numFmt = '#,##0.00';
-      row.getCell(c).alignment = { horizontal: 'right', vertical: 'middle' };
-    });
-    for (let c = 1; c <= 10; c++) {
-      row.getCell(c).alignment = { horizontal: 'left', vertical: 'middle' };
-    }
-
-    // Color faltante
-    const faltante = Number(item.faltante || 0);
-    if (faltante > 0) {
-      row.getCell(17).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.red } };
-    } else if (faltante === 0) {
-      row.getCell(17).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.green } };
-    }
-
-    styleDataRow(ws, rowNum, TOTAL_COLS, idx % 2 === 1);
-    
-    // Resaltar las nuevas columnas calculadas con un color de fondo suave
-    row.getCell(12).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }; // Azul muy claro
-    row.getCell(14).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } }; // Verde muy claro
-  });
-
-  // 4. Fila de totales
-  const totalRow = dataStartRow + response.data.length;
-  const lastDataRow = totalRow - 1;
-
-  // Fórmulas SUM solo para los totales calculados
-  ['L', 'N'].forEach(col => { // L = T.Prov, N = T.Mina
-    const cell = ws.getCell(`${col}${totalRow}`);
-    cell.value = { formula: `SUM(${col}${dataStartRow}:${col}${lastDataRow})` };
-    cell.numFmt = '#,##0.00';
-    cell.font = { name: 'Calibri', size: 11, bold: true };
-    cell.alignment = { horizontal: 'right', vertical: 'middle' };
-    cell.border = { top: { style: 'double', color: { argb: COLORS.borderColor } } };
-  });
-
-  // 5. Impresión
-  setupPrintArea(ws, TOTAL_COLS, totalRow);
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `MP_Historial_Ingresos_${formatDate()}.xlsx`);
-};
 
 // ── Tab historial ──
 const cambiarAHistorial = async () => {
