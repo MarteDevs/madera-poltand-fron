@@ -261,8 +261,8 @@
                   <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">{{ ing.total_items }}</span>
                 </td>
                 <td class="text-end fw-semibold text-success">{{ fmtCant(ing.total_entregado) }}</td>
-                <td class="text-end fw-semibold" style="color:#2563eb;">S/ {{ Number(ing.total_proveedor).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}</td>
-                <td class="text-end fw-semibold" style="color:#16a34a;">S/ {{ Number(ing.total_mina).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}</td>
+                <td class="text-end fw-semibold" style="color:#2563eb;">S/ {{ fmtMoney(ing.total_proveedor) }}</td>
+                <td class="text-end fw-semibold" style="color:#16a34a;">S/ {{ fmtMoney(ing.total_mina) }}</td>
                 <td>
                   <span v-if="ing.observacion" class="text-muted" style="font-size:0.82rem;">{{ ing.observacion }}</span>
                   <span v-else class="text-muted" style="font-size:0.8rem;">—</span>
@@ -293,10 +293,10 @@
                   {{ fmtCant(historialFiltrado.reduce((s, ing) => s + Number(ing.total_entregado), 0)) }}
                 </td>
                 <td class="text-end fw-bold" style="color:#2563eb;">
-                  S/ {{ historialFiltrado.reduce((s, ing) => s + (ing.tipo_pago === 'DIRECTO' ? 0 : Number(ing.total_proveedor)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                  S/ {{ fmtMoney(historialFiltrado.reduce((s, ing) => s + (ing.tipo_pago === 'DIRECTO' ? 0 : Number(ing.total_proveedor)), 0)) }}
                 </td>
                 <td class="text-end fw-bold" style="color:#16a34a;">
-                  S/ {{ historialFiltrado.reduce((s, ing) => s + (ing.tipo_pago === 'DIRECTO' ? 0 : Number(ing.total_mina)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                  S/ {{ fmtMoney(historialFiltrado.reduce((s, ing) => s + (ing.tipo_pago === 'DIRECTO' ? 0 : Number(ing.total_mina)), 0)) }}
                 </td>
                 <td colspan="2"></td>
               </tr>
@@ -752,10 +752,10 @@
                     </td>
                     <td style="font-size:0.85rem;">{{ d.articulo }}</td>
                     <td class="text-muted" style="font-size:0.85rem;">{{ d.proveedor }}</td>
-                    <td class="text-end text-muted" style="font-size:0.75rem;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
-                    <td class="text-end fw-semibold" style="color:#2563eb;">{{ (Number(d.precio_proveedor) * Number(d.cantidad_entregada)).toFixed(2) }}</td>
-                    <td class="text-end text-muted" style="font-size:0.75rem;">{{ Number(d.precio_mina).toFixed(2) }}</td>
-                    <td class="text-end fw-semibold" style="color:#16a34a;">{{ (Number(d.precio_mina) * Number(d.cantidad_entregada)).toFixed(2) }}</td>
+                    <td class="text-end text-muted" style="font-size:0.75rem;">{{ fmtMoney(d.precio_proveedor) }}</td>
+                    <td class="text-end fw-semibold" style="color:#2563eb;">{{ fmtMoney(Number(d.precio_proveedor) * Number(d.cantidad_entregada)) }}</td>
+                    <td class="text-end text-muted" style="font-size:0.75rem;">{{ fmtMoney(d.precio_mina) }}</td>
+                    <td class="text-end fw-semibold" style="color:#16a34a;">{{ fmtMoney(Number(d.precio_mina) * Number(d.cantidad_entregada)) }}</td>
                     <td class="text-end fw-medium">{{ d.pedido || '—' }}</td>
                     <td class="text-end fw-bold text-success">{{ fmtCant(d.cantidad_entregada) }}</td>
                     <td class="text-end fw-semibold">
@@ -778,11 +778,11 @@
                   <tr>
                     <td colspan="4" class="text-end fw-semibold" style="font-size:0.85rem; text-transform:uppercase;">Costo total del viaje:</td>
                     <td class="text-end fw-bold" style="color:#2563eb;">
-                      S/ {{ store.detalleActual.reduce((s, d) => s + (Number(d.cantidad_entregada) * Number(d.precio_proveedor)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                      S/ {{ fmtMoney(store.detalleActual.reduce((s, d) => s + (Number(d.cantidad_entregada) * Number(d.precio_proveedor)), 0)) }}
                     </td>
                     <td></td>
                     <td class="text-end fw-bold" style="color:#16a34a;">
-                      S/ {{ store.detalleActual.reduce((s, d) => s + (Number(d.cantidad_entregada) * Number(d.precio_mina)), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                      S/ {{ fmtMoney(store.detalleActual.reduce((s, d) => s + (Number(d.cantidad_entregada) * Number(d.precio_mina)), 0)) }}
                     </td>
                     <td class="text-end fw-semibold" style="font-size:0.85rem;">Físico total:</td>
                     <td class="text-end fw-bold text-success">
@@ -823,6 +823,8 @@ const catalogStore = useCatalogosStore();
 // Cantidades físicas (no monetarias): sin ceros decimales de relleno
 // ("35.00" -> "35"), pero conserva decimales reales si los hay ("35.5").
 const fmtCant = (v) => Number(v || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
+// Montos en soles: mismo criterio, sin ceros decimales de relleno.
+const fmtMoney = (v) => Number(v || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
 const modalRef = ref(null);
 const modalDetalleRef = ref(null);
 let bsModal = null;

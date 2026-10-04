@@ -134,10 +134,10 @@
                 </span>
               </td>
               <td class="text-end fw-semibold" style="color:#2563eb;">
-                S/ {{ Number(r.total_proveedor).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                S/ {{ fmtMoney(r.total_proveedor) }}
               </td>
               <td class="text-end fw-semibold" style="color:#16a34a;">
-                S/ {{ Number(r.total_mina).toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                S/ {{ fmtMoney(r.total_mina) }}
               </td>
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-1">
@@ -163,10 +163,10 @@
             <tr>
               <td colspan="5" class="text-end fw-bold" style="font-size:0.82rem;">{{ tituloTotal }}</td>
               <td class="text-end fw-bold" style="color:#2563eb;">
-                S/ {{ totalProveedorFiltrado.toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                S/ {{ fmtMoney(totalProveedorFiltrado) }}
               </td>
               <td class="text-end fw-bold" style="color:#16a34a;">
-                S/ {{ totalMinaFiltrado.toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+                S/ {{ fmtMoney(totalMinaFiltrado) }}
               </td>
               <td></td>
             </tr>
@@ -355,10 +355,10 @@
                   </div>
                   <div class="req-item-subtotal">
                     Subtotal línea {{ i + 1 }}:
-                    <span class="text-primary fw-semibold">S/ {{ ((Number(linea.cantidad) || 0) * (Number(linea.precio_proveedor) || 0)).toFixed(2) }}</span>
+                    <span class="text-primary fw-semibold">S/ {{ fmtMoney((Number(linea.cantidad) || 0) * (Number(linea.precio_proveedor) || 0)) }}</span>
                     <span class="text-muted">proveedor</span>
                     <span class="req-item-subtotal-sep">·</span>
-                    <span class="text-success fw-semibold">S/ {{ ((Number(linea.cantidad) || 0) * (Number(linea.precio_mina) || 0)).toFixed(2) }}</span>
+                    <span class="text-success fw-semibold">S/ {{ fmtMoney((Number(linea.cantidad) || 0) * (Number(linea.precio_mina) || 0)) }}</span>
                     <span class="text-muted">mina</span>
                   </div>
                 </div>
@@ -376,11 +376,11 @@
               <span class="req-totals-count">{{ form.detalles.length }} artículo{{ form.detalles.length === 1 ? '' : 's' }}</span>
               <span class="req-totals-item">
                 <i class="bi bi-circle-fill" style="font-size:0.5rem; color:#60a5fa;"></i>
-                Total Proveedor: <strong>S/ {{ totalProveedorForm.toFixed(2) }}</strong>
+                Total Proveedor: <strong>S/ {{ fmtMoney(totalProveedorForm) }}</strong>
               </span>
               <span class="req-totals-item">
                 <i class="bi bi-circle-fill" style="font-size:0.5rem; color:#4ade80;"></i>
-                Total Mina: <strong>S/ {{ totalMinaForm.toFixed(2) }}</strong>
+                Total Mina: <strong>S/ {{ fmtMoney(totalMinaForm) }}</strong>
               </span>
             </div>
             <div class="req-modal-footer-actions">
@@ -438,17 +438,17 @@
                     <td class="text-end">
                       <span v-if="Number(d.faltante) > 0" class="text-danger fw-medium">{{ d.faltante }}</span>
                       <span v-else-if="Number(d.faltante) < 0" class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1">
-                        +{{ Math.abs(Number(d.faltante)).toFixed(2) }} (Exceso)
+                        +{{ fmtMoney(Math.abs(Number(d.faltante))) }} (Exceso)
                       </span>
-                      <span v-else class="text-success fw-medium"><i class="bi bi-check2 me-1"></i>0.00</span>
+                      <span v-else class="text-success fw-medium"><i class="bi bi-check2 me-1"></i>0</span>
                     </td>
-                    <td class="text-end" style="color:#2563eb;">{{ Number(d.precio_proveedor).toFixed(2) }}</td>
+                    <td class="text-end" style="color:#2563eb;">{{ fmtMoney(d.precio_proveedor) }}</td>
                     <td class="text-end fw-semibold" style="color:#2563eb;">
-                      {{ (Number(d.pedido) * Number(d.precio_proveedor)).toFixed(2) }}
+                      {{ fmtMoney(Number(d.pedido) * Number(d.precio_proveedor)) }}
                     </td>
-                    <td class="text-end" style="color:#16a34a;">{{ Number(d.precio_mina).toFixed(2) }}</td>
+                    <td class="text-end" style="color:#16a34a;">{{ fmtMoney(d.precio_mina) }}</td>
                     <td class="text-end fw-semibold" style="color:#16a34a;">
-                      {{ (Number(d.pedido) * Number(d.precio_mina)).toFixed(2) }}
+                      {{ fmtMoney(Number(d.pedido) * Number(d.precio_mina)) }}
                     </td>
                   </tr>
                 </tbody>
@@ -457,11 +457,11 @@
                     <td colspan="5" class="text-end fw-bold" style="font-size:0.82rem;">TOTALES:</td>
                     <td class="text-end"></td>
                     <td class="text-end fw-bold" style="color:#2563eb;">
-                      S/ {{ detallesActuales.reduce((s, d) => s + Number(d.pedido) * Number(d.precio_proveedor), 0).toFixed(2) }}
+                      S/ {{ fmtMoney(detallesActuales.reduce((s, d) => s + Number(d.pedido) * Number(d.precio_proveedor), 0)) }}
                     </td>
                     <td class="text-end"></td>
                     <td class="text-end fw-bold" style="color:#16a34a;">
-                      S/ {{ detallesActuales.reduce((s, d) => s + Number(d.pedido) * Number(d.precio_mina), 0).toFixed(2) }}
+                      S/ {{ fmtMoney(detallesActuales.reduce((s, d) => s + Number(d.pedido) * Number(d.precio_mina), 0)) }}
                     </td>
                   </tr>
                 </tfoot>
@@ -500,6 +500,10 @@ import { useToastStore } from '../stores/toast.store';
 const store = useRequerimientosStore();
 const catStore = useCatalogosStore();
 const toastStore = useToastStore();
+
+// Montos en soles: sin ceros decimales de relleno ("1,819.00" -> "1,819"),
+// pero conserva decimales reales si los hay ("1,819.5").
+const fmtMoney = (v) => Number(v || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
 
 const modalCrearRef = ref(null);
 const modalDetallesRef = ref(null);
