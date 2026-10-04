@@ -11,7 +11,7 @@
 
     <!-- Stats Row -->
     <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <div class="mp-stat-card">
           <div class="mp-stat-icon" style="background:var(--mp-accent-subtle);color:var(--mp-accent);">
             <i class="bi bi-box-seam"></i>
@@ -22,7 +22,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <div class="mp-stat-card">
           <div class="mp-stat-icon" style="background:rgba(239,68,68,0.08);color:var(--mp-danger);">
             <i class="bi bi-archive"></i>
@@ -33,7 +33,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <div class="mp-stat-card">
           <div class="mp-stat-icon" style="background:rgba(16,185,129,0.08);color:var(--mp-success);">
             <i class="bi bi-currency-dollar"></i>
@@ -331,6 +331,7 @@ import PageLayout from '../components/PageLayout.vue';
 import api from '../api/axios';
 import { useCatalogosStore } from '../stores/catalogos.store';
 import { useToastStore } from '../stores/toast.store';
+import { confirmarConSwal } from '../utils/confirmUi';
 
 const catStore = useCatalogosStore();
 const toastStore = useToastStore();
@@ -543,7 +544,7 @@ const guardar = async () => {
 };
 
 const desactivar = async (id) => {
-  if (!confirm('¿Desactivar este artículo? Pasará a la pestaña de Desactivados.')) return;
+  if (!await confirmarConSwal('¿Desactivar este artículo? Pasará a la pestaña de Desactivados.', 'desactivar')) return;
   try {
     const res = await api.delete(`/articulos/${id}`);
     await cargar();
@@ -554,7 +555,7 @@ const desactivar = async (id) => {
 };
 
 const reactivar = async (id) => {
-  if (!confirm('¿Desea reactivar este artículo? Volverá al catálogo activo.')) return;
+  if (!await confirmarConSwal('¿Desea reactivar este artículo? Volverá al catálogo activo.', 'reactivar')) return;
   try {
     await api.put(`/articulos/${id}/reactivar`);
     toastStore.addToast('Artículo reactivado exitosamente', 'success');
@@ -565,7 +566,7 @@ const reactivar = async (id) => {
 };
 
 const eliminarDefinitivo = async (id) => {
-  if (!confirm('¿Desea eliminar definitivamente este artículo? Si no tiene requerimientos o ingresos asociados se borrará por completo.')) return;
+  if (!await confirmarConSwal('¿Desea eliminar definitivamente este artículo? Si no tiene requerimientos o ingresos asociados se borrará por completo.', 'eliminar')) return;
   try {
     const res = await api.delete(`/articulos/${id}`);
     toastStore.addToast(res.data?.mensaje || 'Artículo eliminado', 'info');

@@ -133,6 +133,7 @@ import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
 import { useUsuariosStore } from '../stores/usuarios.store';
 import { useAuthStore } from '../stores/auth.store';
+import { confirmarConSwal, notificarConSwal } from '../utils/confirmUi';
 
 const store = useUsuariosStore();
 const authStore = useAuthStore();
@@ -211,11 +212,16 @@ const guardar = async () => {
 };
 
 const confirmarEliminar = async (user) => {
-  if (confirm(`¿Estás seguro de que deseas eliminar permanentemente (desactivar) al usuario "${user.username}"?\nNo podrá volver a iniciar sesión.`)) {
-    const res = await store.eliminarUsuario(user.id);
-    if (!res.success) {
-      alert(res.mensaje);
-    }
+  const confirmado = await confirmarConSwal(
+    `¿Deseas desactivar al usuario "${user.username}"? No podrá volver a iniciar sesión.`,
+    'desactivar'
+  );
+  if (!confirmado) return;
+  const res = await store.eliminarUsuario(user.id);
+  if (res.success) {
+    notificarConSwal('Usuario desactivado exitosamente', 'info');
+  } else {
+    notificarConSwal(res.mensaje, 'danger');
   }
 };
 </script>

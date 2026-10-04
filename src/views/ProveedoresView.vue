@@ -8,7 +8,7 @@
 
     <!-- Stats Row -->
     <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-6">
         <div class="mp-stat-card">
           <div class="mp-stat-icon" style="background:var(--mp-accent-subtle);color:var(--mp-accent);">
             <i class="bi bi-truck"></i>
@@ -19,7 +19,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-6">
         <div class="mp-stat-card">
           <div class="mp-stat-icon" style="background:rgba(239,68,68,0.08);color:var(--mp-danger);">
             <i class="bi bi-archive"></i>
@@ -96,7 +96,7 @@
               <td class="text-center">
                 <div class="mp-action-group">
                   <button class="mp-action-btn mp-action-edit" @click="abrirModal(p)" title="Editar"><i class="bi bi-pencil"></i></button>
-                  <button class="mp-action-btn mp-action-delete" @click="desactivar(p.id)" title="Desactivar"><i class="bi bi-trash"></i></button>
+                  <button class="mp-action-btn mp-action-delete" @click="desactivar(p.id, '¿Desactivar este proveedor? Pasará a la pestaña de Desactivados.')" title="Desactivar"><i class="bi bi-trash"></i></button>
                 </div>
               </td>
             </tr>
@@ -157,10 +157,10 @@
               <td class="text-muted" style="font-size:0.85rem;">{{ p.created_at?.split('T')[0] || '—' }}</td>
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-1">
-                  <button class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 py-1 px-2" @click="reactivar(p.id)" title="Reactivar este proveedor" style="font-size:0.78rem;">
+                  <button class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 py-1 px-2" @click="reactivar(p.id, '¿Desea reactivar este proveedor? Volverá al catálogo activo.')" title="Reactivar este proveedor" style="font-size:0.78rem;">
                     <i class="bi bi-arrow-counterclockwise"></i> Reactivar
                   </button>
-                  <button class="mp-action-btn mp-action-delete" @click="eliminarDefinitivo(p.id)" title="Eliminar definitivamente">
+                  <button class="mp-action-btn mp-action-delete" @click="eliminarDefinitivo(p.id, '¿Desea eliminar definitivamente este proveedor? Si no tiene requerimientos o tarifas asociadas se borrará por completo.')" title="Eliminar definitivamente">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -171,160 +171,89 @@
       </div>
     </div>
 
-    <!-- Modal Form -->
-    <div class="modal fade" id="modalProveedor" tabindex="-1" ref="modalRef">
-      <div class="modal-dialog">
-        <div class="modal-content mp-modal">
-          <div class="modal-header mp-modal-header">
-            <h5 class="modal-title fw-semibold">{{ editando ? 'Editar' : 'Nuevo' }} Proveedor</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="mp-form-label">Nombre <span class="text-danger">*</span></label>
-              <input type="text" class="form-control mp-input" v-model="form.nombre" placeholder="Nombre del proveedor" />
-            </div>
-            <div v-if="error" class="alert alert-danger py-2" style="font-size:0.85rem;">{{ error }}</div>
-          </div>
-          <div class="modal-footer mp-modal-footer">
-            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button class="btn-mp-primary" @click="guardar" :disabled="guardando">
-              <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
-              {{ guardando ? 'Guardando...' : 'Guardar' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Panel de alta/edición -->
+    <CrudDrawer
+      :open="drawerOpen"
+      :title="(editando ? 'Editar' : 'Nuevo') + ' proveedor'"
+      :can-submit="isFormValid"
+      :submitting="guardando"
+      :progress-text="progressText"
+      @close="drawerOpen = false"
+      @submit="guardar"
+    >
+      <CrudField
+        label="Nombre"
+        required
+        v-model="form.nombre"
+        :error="displayError('nombre')"
+        :touched="!!fieldTouched.nombre"
+        hint="Mínimo 3 caracteres."
+        placeholder="Nombre del proveedor"
+        @touch="validarCampo('nombre')"
+      />
+      <div v-if="error" class="alert alert-danger py-2" style="font-size:0.85rem;">{{ error }}</div>
+    </CrudDrawer>
   </PageLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
 import PageLayout from '../components/PageLayout.vue';
-import api from '../api/axios';
-import { useToastStore } from '../stores/toast.store';
-
-const toastStore = useToastStore();
+import CrudDrawer from '../components/CrudDrawer.vue';
+import CrudField from '../components/CrudField.vue';
+import { confirmarConSwal, notificarConSwal } from '../utils/confirmUi';
+import { useCrudCatalogo } from '../composables/useCrudCatalogo';
 
 const tabActiva = ref('activos');
-const proveedores = ref([]);
-const proveedoresDesactivados = ref([]);
-const cargando = ref(true);
-const cargandoDesactivados = ref(false);
-const busqueda = ref('');
-const busquedaDesactivados = ref('');
+const drawerOpen = ref(false);
 
-const modalRef = ref(null);
-let bsModal = null;
-
-const editando = ref(false);
-const editandoId = ref(null);
-const guardando = ref(false);
-const error = ref('');
-const form = ref({ nombre: '' });
-
-const proveedoresFiltrados = computed(() => {
-  const q = busqueda.value.toLowerCase().trim();
-  if (!q) return proveedores.value;
-  return proveedores.value.filter(p => p.nombre?.toLowerCase().includes(q));
+const {
+  items: proveedores,
+  itemsDesactivados: proveedoresDesactivados,
+  cargando,
+  cargandoDesactivados,
+  busqueda,
+  busquedaDesactivados,
+  filtrados: proveedoresFiltrados,
+  desactivadosFiltrados: proveedoresDesactivadosFiltrados,
+  editando,
+  guardando,
+  error,
+  form,
+  fieldErrors,
+  fieldTouched,
+  isFormValid,
+  validarCampo,
+  displayError,
+  cargar,
+  abrirModal: abrirModalBase,
+  guardar: guardarBase,
+  desactivar,
+  reactivar,
+  eliminarDefinitivo
+} = useCrudCatalogo({
+  resource: '/proveedores',
+  validadores: {
+    nombre: (v) => (!v || v.trim().length < 3) ? 'Mínimo 3 caracteres.' : null
+  },
+  onNotify: notificarConSwal,
+  onConfirm: confirmarConSwal
 });
 
-const proveedoresDesactivadosFiltrados = computed(() => {
-  const q = busquedaDesactivados.value.toLowerCase().trim();
-  if (!q) return proveedoresDesactivados.value;
-  return proveedoresDesactivados.value.filter(p => p.nombre?.toLowerCase().includes(q));
-});
+const progressText = computed(() =>
+  isFormValid.value ? '' : (fieldErrors.value.nombre || 'Completa los campos requeridos')
+);
 
-const cargar = async () => {
-  cargando.value = true;
-  cargandoDesactivados.value = true;
-  try {
-    const [resActivos, resDesact] = await Promise.all([
-      api.get('/proveedores'),
-      api.get('/proveedores?estado=0')
-    ]);
-    proveedores.value = resActivos.data || [];
-    proveedoresDesactivados.value = resDesact.data || [];
-  } catch (e) {
-    console.error('Error cargando proveedores:', e);
-  } finally {
-    cargando.value = false;
-    cargandoDesactivados.value = false;
-  }
-};
-
-onMounted(async () => {
-  await cargar();
-  bsModal = new Modal(modalRef.value);
+onMounted(() => {
+  cargar();
 });
 
 const abrirModal = (item = null) => {
-  error.value = '';
-  if (item) {
-    editando.value = true;
-    editandoId.value = item.id;
-    form.value = { nombre: item.nombre };
-  } else {
-    editando.value = false;
-    editandoId.value = null;
-    form.value = { nombre: '' };
-  }
-  bsModal.show();
+  abrirModalBase(item);
+  drawerOpen.value = true;
 };
 
 const guardar = async () => {
-  error.value = '';
-  if (!form.value.nombre) { error.value = 'El nombre es obligatorio.'; return; }
-  guardando.value = true;
-  try {
-    if (editando.value) {
-      await api.put(`/proveedores/${editandoId.value}`, form.value);
-      toastStore.addToast('Proveedor actualizado exitosamente', 'success');
-    } else {
-      const res = await api.post('/proveedores', form.value);
-      toastStore.addToast(res.data?.mensaje || 'Proveedor guardado exitosamente', 'success');
-    }
-    await cargar();
-    bsModal.hide();
-  } catch (e) {
-    error.value = e.response?.data?.mensaje || 'Error al guardar';
-  } finally {
-    guardando.value = false;
-  }
-};
-
-const desactivar = async (id) => {
-  if (!confirm('¿Desactivar este proveedor? Pasará a la pestaña de Desactivados.')) return;
-  try {
-    const res = await api.delete(`/proveedores/${id}`);
-    toastStore.addToast(res.data?.mensaje || 'Proveedor desactivado', 'info');
-    await cargar();
-  } catch (e) {
-    toastStore.addToast(e.response?.data?.mensaje || 'Error al desactivar', 'danger');
-  }
-};
-
-const reactivar = async (id) => {
-  if (!confirm('¿Desea reactivar este proveedor? Volverá al catálogo activo.')) return;
-  try {
-    await api.put(`/proveedores/${id}/reactivar`);
-    toastStore.addToast('Proveedor reactivado exitosamente', 'success');
-    await cargar();
-  } catch (e) {
-    toastStore.addToast(e.response?.data?.mensaje || 'Error al reactivar proveedor', 'danger');
-  }
-};
-
-const eliminarDefinitivo = async (id) => {
-  if (!confirm('¿Desea eliminar definitivamente este proveedor? Si no tiene requerimientos o tarifas asociadas se borrará por completo.')) return;
-  try {
-    const res = await api.delete(`/proveedores/${id}`);
-    toastStore.addToast(res.data?.mensaje || 'Proveedor eliminado', 'info');
-    await cargar();
-  } catch (e) {
-    toastStore.addToast(e.response?.data?.mensaje || 'Error al eliminar proveedor', 'danger');
-  }
+  if (await guardarBase()) drawerOpen.value = false;
 };
 </script>

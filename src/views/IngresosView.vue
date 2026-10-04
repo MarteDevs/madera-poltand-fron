@@ -802,6 +802,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { useIngresosStore } from '../stores/ingresos.store';
 import { useToastStore } from '../stores/toast.store';
 import { useCatalogosStore } from '../stores/catalogos.store';
+import * as excelUtil from '../utils/excelExport';
 
 const authStore = useAuthStore();
 const store = useIngresosStore();
@@ -1152,65 +1153,14 @@ const thinBorder = {
   right: { style: 'thin', color: { argb: COLORS.borderColor } }
 };
 
-const addTitleBlock = (ws, titulo, subtitulo, totalCols) => {
-  const hoy = new Date();
-  const fechaStr = `${String(hoy.getDate()).padStart(2,'0')}/${String(hoy.getMonth()+1).padStart(2,'0')}/${hoy.getFullYear()}`;
-  const lastCol = String.fromCharCode(64 + totalCols);
+const addTitleBlock = (ws, _titulo, subtitulo, totalCols) =>
+  excelUtil.agregarBloqueTitulo(ws, subtitulo, totalCols, COLORS);
 
-  // Fila 1 — Título empresa
-  ws.mergeCells(`A1:${lastCol}1`);
-  const r1 = ws.getCell('A1');
-  r1.value = 'MADERA POLTAND';
-  r1.font = { name: 'Calibri', size: 16, bold: true, color: { argb: COLORS.titleBg } };
-  r1.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(1).height = 30;
+const styleHeaderRow = (ws, rowNum, totalCols) =>
+  excelUtil.estilizarFilaCabecera(ws, rowNum, totalCols, COLORS);
 
-  // Fila 2 — Subtítulo
-  ws.mergeCells(`A2:${lastCol}2`);
-  const r2 = ws.getCell('A2');
-  r2.value = subtitulo;
-  r2.font = { name: 'Calibri', size: 12, color: { argb: COLORS.subtitleFont } };
-  r2.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(2).height = 22;
-
-  // Fila 3 — Fecha
-  ws.mergeCells(`A3:${lastCol}3`);
-  const r3 = ws.getCell('A3');
-  r3.value = `Generado: ${fechaStr}`;
-  r3.font = { name: 'Calibri', size: 10, italic: true, color: { argb: COLORS.subtitleFont } };
-  r3.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(3).height = 18;
-
-  // Fila 4 — separador vacío
-  ws.getRow(4).height = 8;
-};
-
-const styleHeaderRow = (ws, rowNum, totalCols) => {
-  const row = ws.getRow(rowNum);
-  row.height = 28;
-  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    if (colNumber <= totalCols) {
-      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.headerFont } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.headerBg } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      cell.border = thinBorder;
-    }
-  });
-};
-
-const styleDataRow = (ws, rowNum, totalCols, isAlt) => {
-  const row = ws.getRow(rowNum);
-  row.height = 20;
-  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    if (colNumber <= totalCols) {
-      cell.font = { name: 'Calibri', size: 10 };
-      cell.border = thinBorder;
-      if (isAlt) {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.altRow } };
-      }
-    }
-  });
-};
+const styleDataRow = (ws, rowNum, totalCols, isAlt) =>
+  excelUtil.estilizarFilaDatos(ws, rowNum, totalCols, isAlt, COLORS);
 
 const setupPrintArea = (ws, totalCols, lastDataRow) => {
   const lastCol = String.fromCharCode(64 + totalCols);
@@ -1225,10 +1175,7 @@ const setupPrintArea = (ws, totalCols, lastDataRow) => {
   ws.views = [{ state: 'frozen', ySplit: 5 }]; // Congelar hasta cabecera (fila 5)
 };
 
-const formatDate = () => {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
-};
+const formatDate = () => excelUtil.formatearFechaArchivo();
 
 // ── Exportar Pendientes Excel ──
 const exportarPendientesExcel = async () => {

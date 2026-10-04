@@ -32,10 +32,11 @@
         </div>
       </div>
 
-      <!-- Barra de filtros -->
+      <!-- Barra de filtros: Estado + búsqueda siempre visibles (son los más
+           usados); Mes/Año/Proveedor/Destino quedan detrás de "Más filtros" -->
       <div class="req-filter-bar">
         <div class="d-flex align-items-center flex-wrap gap-2 w-100">
-          
+
           <!-- Filtro de Estado -->
           <div class="filter-badge">
             <i class="bi bi-funnel-fill text-primary me-1"></i>
@@ -48,63 +49,60 @@
             </select>
           </div>
 
-          <!-- Filtro de Mes -->
-          <div class="filter-badge">
-            <i class="bi bi-calendar3 text-success me-1"></i>
-            <select v-model="filtroMes" class="filter-select-clean" style="width: 155px;">
-              <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">
-                {{ m.label }}
-              </option>
-            </select>
-          </div>
+          <!-- Más filtros (Mes/Año/Proveedor/Destino) -->
+          <div class="req-more-filters">
+            <button
+              class="btn btn-sm btn-outline-secondary position-relative"
+              style="border-radius: 20px; padding: 5px 15px;"
+              @click="mostrarMasFiltros = !mostrarMasFiltros"
+            >
+              <i class="bi bi-sliders me-1"></i> Más filtros
+              <span v-if="filtrosSecundariosActivos > 0" class="badge rounded-pill bg-primary ms-1">{{ filtrosSecundariosActivos }}</span>
+            </button>
 
-          <!-- Filtro de Año -->
-          <div class="filter-badge">
-            <i class="bi bi-calendar-event text-warning me-1"></i>
-            <select v-model="filtroAnio" class="filter-select-clean" style="width: 120px;">
-              <option value="">Todos los años</option>
-              <option v-for="a in aniosDisponibles" :key="a" :value="a">
-                {{ a }}
-              </option>
-            </select>
+            <div v-if="mostrarMasFiltros" class="req-filters-panel">
+              <div class="req-filters-panel-row">
+                <label><i class="bi bi-calendar3 text-success me-1"></i>Mes</label>
+                <select v-model="filtroMes" class="form-select form-select-sm">
+                  <option v-for="m in mesesOpciones" :key="m.value" :value="m.value">{{ m.label }}</option>
+                </select>
+              </div>
+              <div class="req-filters-panel-row">
+                <label><i class="bi bi-calendar-event text-warning me-1"></i>Año</label>
+                <select v-model="filtroAnio" class="form-select form-select-sm">
+                  <option value="">Todos los años</option>
+                  <option v-for="a in aniosDisponibles" :key="a" :value="a">{{ a }}</option>
+                </select>
+              </div>
+              <div class="req-filters-panel-row">
+                <label><i class="bi bi-building text-info me-1"></i>Proveedor</label>
+                <select v-model="filtroProveedor" class="form-select form-select-sm">
+                  <option value="">Todos los proveedores</option>
+                  <option v-for="p in catStore.proveedores" :key="p.id" :value="p.nombre">{{ p.nombre }}</option>
+                </select>
+              </div>
+              <div class="req-filters-panel-row">
+                <label><i class="bi bi-pin-map-fill text-warning me-1"></i>Destino</label>
+                <select v-model="filtroTipoPago" class="form-select form-select-sm">
+                  <option value="">Todo destino</option>
+                  <option value="DEPOSITO">Depósito</option>
+                  <option value="DIRECTO">Directo</option>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-outline-secondary w-100" @click="limpiarFiltros"
+                :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio && !filtroProveedor && !filtroTipoPago">
+                <i class="bi bi-trash3 me-1"></i> Limpiar todos los filtros
+              </button>
+            </div>
           </div>
-
-          <!-- Filtro de Proveedor -->
-          <div class="filter-badge">
-            <i class="bi bi-building text-info me-1"></i>
-            <select v-model="filtroProveedor" class="filter-select-clean" style="width: 170px;">
-              <option value="">Todos los Proveedores</option>
-              <option v-for="p in catStore.proveedores" :key="p.id" :value="p.nombre">
-                {{ p.nombre }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Filtro de Destino (tipo_pago) -->
-          <div class="filter-badge">
-            <i class="bi bi-pin-map-fill text-warning me-1"></i>
-            <select v-model="filtroTipoPago" class="filter-select-clean" style="width: 140px;">
-              <option value="">Todo Destino</option>
-              <option value="DEPOSITO">Depósito</option>
-              <option value="DIRECTO">Directo</option>
-            </select>
-          </div>
-
-          <!-- Limpiar -->
-          <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px; padding: 5px 15px;"
-            @click="limpiarFiltros"
-            :disabled="filtroEstado === 'TODOS' && !buscarTexto && !filtroMes && !filtroAnio && !filtroProveedor && !filtroTipoPago"
-            title="Limpiar filtros">
-            <i class="bi bi-trash3 me-1"></i> Limpiar
-          </button>
 
           <!-- Buscador -->
           <div class="req-search-box ms-auto">
             <i class="bi bi-search"></i>
-            <input 
-              type="text" 
-              v-model="buscarTexto" 
-              placeholder="Buscar por código, mina, sup..." 
+            <input
+              type="text"
+              v-model="buscarTexto"
+              placeholder="Buscar por código, mina o supervisor"
             />
           </div>
         </div>
@@ -477,6 +475,7 @@ import SearchableSelect from '../components/SearchableSelect.vue';
 import { useRequerimientosStore } from '../stores/requerimientos.store';
 import { useCatalogosStore } from '../stores/catalogos.store';
 import { useToastStore } from '../stores/toast.store';
+import * as excelUtil from '../utils/excelExport';
 
 const store = useRequerimientosStore();
 const catStore = useCatalogosStore();
@@ -515,6 +514,15 @@ const filtroMes = ref('');
 const filtroAnio = ref('');
 const filtroProveedor = ref('');
 const filtroTipoPago = ref('');
+
+// Hick's Law: con el estado + búsqueda alcanza para el 80% de los casos.
+// Mes/Año/Proveedor/Destino quedan agrupados detrás de "Más filtros" para no
+// mostrar 5 selects simultáneos todo el tiempo.
+const mostrarMasFiltros = ref(false);
+const filtrosSecundariosActivos = computed(() =>
+  [filtroMes.value, filtroAnio.value, filtroProveedor.value, filtroTipoPago.value]
+    .filter(v => v !== '').length
+);
 
 const mesesOpciones = [
   { value: '', label: 'Todos los meses' },
@@ -798,66 +806,16 @@ const xlBorder = {
   right: { style: 'thin', color: { argb: XL_COLORS.borderColor } }
 };
 
-const xlTitleBlock = (ws, subtitulo, totalCols) => {
-  const hoy = new Date();
-  const fechaStr = `${String(hoy.getDate()).padStart(2,'0')}/${String(hoy.getMonth()+1).padStart(2,'0')}/${hoy.getFullYear()}`;
-  const lastCol = String.fromCharCode(64 + Math.min(totalCols, 26));
+const xlTitleBlock = (ws, subtitulo, totalCols) =>
+  excelUtil.agregarBloqueTitulo(ws, subtitulo, totalCols, XL_COLORS);
 
-  ws.mergeCells(`A1:${lastCol}1`);
-  const r1 = ws.getCell('A1');
-  r1.value = 'MADERA POLTAND';
-  r1.font = { name: 'Calibri', size: 16, bold: true, color: { argb: XL_COLORS.titleColor } };
-  r1.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(1).height = 30;
+const xlStyleHeader = (ws, rowNum, totalCols) =>
+  excelUtil.estilizarFilaCabecera(ws, rowNum, totalCols, XL_COLORS);
 
-  ws.mergeCells(`A2:${lastCol}2`);
-  const r2 = ws.getCell('A2');
-  r2.value = subtitulo;
-  r2.font = { name: 'Calibri', size: 12, color: { argb: XL_COLORS.subtitleFont } };
-  r2.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(2).height = 22;
+const xlStyleDataRow = (ws, rowNum, totalCols, isAlt) =>
+  excelUtil.estilizarFilaDatos(ws, rowNum, totalCols, isAlt, XL_COLORS);
 
-  ws.mergeCells(`A3:${lastCol}3`);
-  const r3 = ws.getCell('A3');
-  r3.value = `Generado: ${fechaStr}`;
-  r3.font = { name: 'Calibri', size: 10, italic: true, color: { argb: XL_COLORS.subtitleFont } };
-  r3.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(3).height = 18;
-
-  ws.getRow(4).height = 8;
-};
-
-const xlStyleHeader = (ws, rowNum, totalCols) => {
-  const row = ws.getRow(rowNum);
-  row.height = 28;
-  row.eachCell({ includeEmpty: true }, (cell, col) => {
-    if (col <= totalCols) {
-      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: XL_COLORS.headerFont } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_COLORS.headerBg } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      cell.border = xlBorder;
-    }
-  });
-};
-
-const xlStyleDataRow = (ws, rowNum, totalCols, isAlt) => {
-  const row = ws.getRow(rowNum);
-  row.height = 20;
-  row.eachCell({ includeEmpty: true }, (cell, col) => {
-    if (col <= totalCols) {
-      cell.font = cell.font || { name: 'Calibri', size: 10 };
-      cell.border = xlBorder;
-      if (isAlt) {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL_COLORS.altRow } };
-      }
-    }
-  });
-};
-
-const xlFormatDate = () => {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
-};
+const xlFormatDate = () => excelUtil.formatearFechaArchivo();
 
 // ── Excel General (Resumen por requerimiento) ──
 const exportarExcel = async () => {
@@ -1170,6 +1128,33 @@ const badgeClass = (estado) => {
 </script>
 
 <style scoped>
+/* Panel "Más filtros" (Hick's Law: agrupa Mes/Año/Proveedor/Destino detrás
+   de un solo botón en vez de 4 selects simultáneos en la barra). */
+.req-more-filters { position: relative; }
+.req-filters-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: 260px;
+  background: var(--mp-card-bg);
+  border: 1px solid var(--mp-border);
+  border-radius: var(--mp-radius-sm);
+  box-shadow: var(--mp-shadow-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeInUp 0.15s ease both;
+}
+.req-filters-panel-row label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--mp-text-muted);
+  margin-bottom: 4px;
+}
+
 /* Estilos para las tarjetas de ítems del requerimiento */
 .req-item-card {
   transition: all 0.2s ease;

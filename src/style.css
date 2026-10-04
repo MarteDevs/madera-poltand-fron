@@ -6,7 +6,7 @@
 /* ── DESIGN TOKENS ── */
 :root {
   --mp-sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  --mp-sidebar-width: 260px;
+  --mp-sidebar-width: 76px;
   --mp-accent: #3b82f6;
   --mp-accent-hover: #2563eb;
   --mp-accent-glow: rgba(59, 130, 246, 0.25);
@@ -85,13 +85,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-weight: 600;
 }
 
-/* ── SIDEBAR ── */
-.mp-sidebar {
+/* ── RIEL DE NAVEGACIÓN ── */
+.mp-rail {
   width: var(--mp-sidebar-width);
   min-height: 100vh;
   background: var(--mp-sidebar-bg);
   display: flex;
   flex-direction: column;
+  align-items: center;
   position: fixed;
   left: 0; top: 0; bottom: 0;
   z-index: var(--mp-z-sidebar);
@@ -101,7 +102,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border-right: 1px solid rgba(255,255,255,0.06);
 }
 
-.mp-sidebar::before {
+.mp-rail::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -110,69 +111,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   pointer-events: none;
 }
 
-.mp-sidebar .nav-link {
-  color: #94a3b8;
-  border-radius: var(--mp-radius-sm);
-  margin: 2px 12px;
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.25s var(--mp-transition);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-  overflow: hidden;
-}
-
-.mp-sidebar .nav-link::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--mp-accent);
-  border-radius: 0 4px 4px 0;
-  transform: scaleY(0);
-  transition: transform 0.3s var(--mp-spring);
-}
-
-.mp-sidebar .nav-link:hover {
-  color: #e2e8f0;
-  background: rgba(255,255,255,0.06);
-  transform: translateX(4px);
-}
-
-.mp-sidebar .nav-link.active {
-  color: #fff;
-  background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0.08) 100%);
-  font-weight: 600;
-}
-
-.mp-sidebar .nav-link.active::before {
-  transform: scaleY(1);
-}
-
-.mp-sidebar .nav-link i {
-  font-size: 1.1rem;
-  width: 22px;
-  text-align: center;
-  transition: transform 0.2s var(--mp-spring);
-}
-
-.mp-sidebar .nav-link:hover i {
-  transform: scale(1.15);
-}
-
-.mp-sidebar .nav-section {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #475569;
-  font-weight: 700;
-  padding: 22px 26px 8px;
-}
-
-.mp-sidebar.show { transform: translateX(0); }
+.mp-rail.show { transform: translateX(0); }
 
 /* Overlay */
 .mp-overlay {
@@ -189,6 +128,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 /* ── MAIN LAYOUT ── */
 .mp-main {
+  /* .mp-rail es position:fixed (fuera del flujo), así que dentro de
+     .d-flex este es el único hijo real; sin flex:1 se achica al tamaño de
+     su contenido en vez de ocupar el resto del ancho de la pantalla. */
+  flex: 1;
+  min-width: 0;
   margin-left: var(--mp-sidebar-width);
   min-height: 100vh;
   display: flex;
@@ -605,7 +549,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 991.98px) {
-  .mp-sidebar {
+  .mp-rail {
     transform: translateX(-100%);
     box-shadow: 10px 0 40px rgba(0,0,0,0.15);
   }
@@ -747,12 +691,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 /* ── ACTION BUTTONS ── */
 .mp-action-group {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: center;
 }
+/* 36px en vez de 32px: son los botones que más se clickean por fila
+   (Fitts's Law — objetivo más grande y mejor separado = menos mis-clicks). */
 .mp-action-btn {
-  width: 32px; height: 32px;
-  border-radius: 8px;
+  width: 36px; height: 36px;
+  border-radius: 9px;
   border: 1.5px solid var(--mp-border);
   background: white;
   display: flex;
@@ -762,16 +708,29 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-size: 0.8rem;
   transition: all 0.2s var(--mp-transition);
 }
-.mp-action-edit:hover {
+/* Color distintivo también en reposo (no solo al pasar el mouse): editar y
+   eliminar deben poder diferenciarse de un vistazo, sin necesidad de hover
+   (Nielsen — reconocimiento en vez de recuerdo). */
+.mp-action-edit {
   background: var(--mp-accent-subtle);
-  border-color: var(--mp-accent);
+  border-color: rgba(59, 130, 246, 0.3);
   color: var(--mp-accent);
+}
+.mp-action-edit:hover {
+  background: var(--mp-accent);
+  border-color: var(--mp-accent);
+  color: #fff;
   transform: scale(1.1);
 }
-.mp-action-delete:hover {
-  background: rgba(239,68,68,0.08);
-  border-color: var(--mp-danger);
+.mp-action-delete {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
   color: var(--mp-danger);
+}
+.mp-action-delete:hover {
+  background: var(--mp-danger);
+  border-color: var(--mp-danger);
+  color: #fff;
   transform: scale(1.1);
 }
 
@@ -1044,7 +1003,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background: #ffffff;
   box-shadow: var(--mp-shadow-sm);
   transition: all 0.25s var(--mp-transition);
-  width: 200px;
+  width: 280px;
   outline: none;
   color: var(--mp-text);
 }
@@ -1056,7 +1015,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .req-search-box input:focus {
   border-color: var(--mp-accent);
   box-shadow: 0 0 0 3px var(--mp-accent-glow);
-  width: 240px;
+  width: 320px;
   transform: none;
 }
 
@@ -1139,5 +1098,18 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
+}
+
+/* ── MOTION REDUCIDO ──
+   Nielsen #8 (estética minimalista) + accesibilidad: quienes activan esta
+   preferencia (sensibilidad vestibular, o simplemente prefieren menos
+   movimiento) dejan de ver las animaciones de entrada/hover/stagger. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
