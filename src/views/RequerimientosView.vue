@@ -220,7 +220,7 @@
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body" style="overflow-y:auto; flex:1; display:flex; flex-direction:column;">
+          <div class="modal-body" style="overflow:hidden; flex:1; min-height:0; display:flex; flex-direction:column;">
             <!-- Cabecera del requerimiento -->
             <div class="row g-3 mb-4">
               <div class="col-md-3">
@@ -287,7 +287,12 @@
 
             <!-- Líneas de detalle -->
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="fw-semibold mb-0">Artículos del pedido</h6>
+              <h6 class="fw-semibold mb-0">
+                Artículos del pedido
+                <span v-if="form.detalles.length > 0" class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size:0.72rem;">
+                  {{ form.detalles.length }}
+                </span>
+              </h6>
               <button class="btn btn-sm btn-outline-primary" ref="agregarBtnRef"
                 @click="agregarYFocus"
                 @keydown.enter.prevent="agregarYFocus"
@@ -296,13 +301,14 @@
               </button>
             </div>
 
-            <div class="d-flex flex-column gap-3 mb-3 px-1" style="flex:1; overflow-y:auto;">
+            <div class="d-flex flex-column gap-3 mb-3 px-1" style="flex:1; min-height:0; overflow-y:auto;">
               <div v-if="form.detalles.length === 0" class="text-center text-muted py-5 border rounded-3 bg-light">
                 <i class="bi bi-cart-plus fs-3 d-block mb-2"></i>
                 Agrega al menos un artículo al pedido
               </div>
               <div v-for="(linea, i) in form.detalles" :key="i" class="card shadow-sm border-0 req-item-card">
-                <div class="card-body p-3">
+                <div class="req-item-number">{{ i + 1 }}</div>
+                <div class="card-body p-3 ps-4">
                   <div class="row g-3 align-items-end">
                     <div class="col-md-5">
                       <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Artículo</label>
@@ -353,6 +359,14 @@
                       </button>
                     </div>
                   </div>
+                  <div class="req-item-subtotal">
+                    Subtotal línea {{ i + 1 }}:
+                    <span class="text-primary fw-semibold">S/ {{ ((Number(linea.cantidad) || 0) * (Number(linea.precio_proveedor) || 0)).toFixed(2) }}</span>
+                    <span class="text-muted">proveedor</span>
+                    <span class="req-item-subtotal-sep">·</span>
+                    <span class="text-success fw-semibold">S/ {{ ((Number(linea.cantidad) || 0) * (Number(linea.precio_mina) || 0)).toFixed(2) }}</span>
+                    <span class="text-muted">mina</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -361,12 +375,27 @@
               <i class="bi bi-exclamation-circle me-2"></i>{{ mensajeError }}
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button class="btn btn-primary" @click="guardar" :disabled="guardando">
-              <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
-              {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar Requerimiento' : 'Crear Requerimiento') }}
-            </button>
+          <!-- Footer: totales en vivo pegados junto a los botones de acción,
+               siempre a la vista y fuera del área con scroll de la lista. -->
+          <div class="modal-footer req-modal-footer">
+            <div v-if="form.detalles.length > 0" class="req-totals-bar">
+              <span class="req-totals-count">{{ form.detalles.length }} artículo{{ form.detalles.length === 1 ? '' : 's' }}</span>
+              <span class="req-totals-item">
+                <i class="bi bi-circle-fill" style="font-size:0.5rem; color:#60a5fa;"></i>
+                Total Proveedor: <strong>S/ {{ totalProveedorForm.toFixed(2) }}</strong>
+              </span>
+              <span class="req-totals-item">
+                <i class="bi bi-circle-fill" style="font-size:0.5rem; color:#4ade80;"></i>
+                Total Mina: <strong>S/ {{ totalMinaForm.toFixed(2) }}</strong>
+              </span>
+            </div>
+            <div class="req-modal-footer-actions">
+              <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button class="btn btn-primary" @click="guardar" :disabled="guardando">
+                <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
+                {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar Requerimiento' : 'Crear Requerimiento') }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -999,6 +1028,15 @@ const exportarExcelDetallado = async () => {
   saveAs(blob, `MP_Req_Detallado_${xlFormatDate()}.xlsx`);
 };
 
+// Totales en vivo del pedido que se está armando (para no perder la
+// referencia general mientras se van agregando líneas)
+const totalProveedorForm = computed(() =>
+  form.value.detalles.reduce((s, d) => s + (Number(d.cantidad) || 0) * (Number(d.precio_proveedor) || 0), 0)
+);
+const totalMinaForm = computed(() =>
+  form.value.detalles.reduce((s, d) => s + (Number(d.cantidad) || 0) * (Number(d.precio_mina) || 0), 0)
+);
+
 const agregarLinea = () => {
   form.value.detalles.push({
     articulo_id: '',
@@ -1136,6 +1174,7 @@ const badgeClass = (estado) => {
 <style scoped>
 /* Estilos para las tarjetas de ítems del requerimiento */
 .req-item-card {
+  position: relative;
   transition: all 0.2s ease;
   border: 1px solid #dee2e6 !important;
   border-left: 5px solid #2563eb !important; /* Acento azul */
@@ -1152,6 +1191,89 @@ const badgeClass = (estado) => {
 .req-item-card .form-control:focus {
   border-color: #2563eb !important;
   box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Numeración por línea: referencia rápida ("línea 3") cuando hay muchos
+   artículos agregados y es fácil perder la cuenta. */
+.req-item-number {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+  z-index: 1;
+}
+
+/* Subtotal por línea: referencia numérica inmediata sin tener que sumar a mano. */
+.req-item-subtotal {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.76rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.req-item-subtotal-sep {
+  margin: 0 4px;
+  color: #cbd5e1;
+}
+
+/* Footer del modal: totales en vivo a la izquierda, acciones a la derecha,
+   siempre visibles y pegados (sin el hueco que quedaba cuando la barra
+   vivía dentro del área con scroll). */
+.req-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.req-modal-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Barra de totales: fondo oscuro de alto contraste para identificarla de un
+   vistazo entre el resto de campos. */
+.req-totals-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  font-size: 0.82rem;
+}
+.req-totals-count {
+  font-weight: 700;
+  color: #fff;
+  padding-right: 12px;
+  border-right: 1px solid rgba(255,255,255,0.15);
+}
+.req-totals-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #e2e8f0;
+}
+.req-totals-item strong {
+  color: #fff;
+  font-size: 0.95rem;
 }
 
 @keyframes slideInUp {

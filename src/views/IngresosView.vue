@@ -314,7 +314,7 @@
 
     <!-- ====== MODAL: REGISTRAR INGRESO ====== -->
     <div class="modal fade" id="modalIngreso" tabindex="-1" ref="modalRef">
-      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width:1440px;">
         <div class="modal-content">
           <div class="modal-header bg-light py-2">
             <h5 class="modal-title fw-semibold d-flex align-items-center">
@@ -338,30 +338,35 @@
                 <span class="fw-bold text-primary font-monospace">{{ codigoPreview }}</span>
               </div>
               
-              <div class="row g-2">
+              <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Fecha</label>
-                  <input ref="refFecha" type="date" class="form-control form-control-sm"
+                  <input ref="refFecha" type="date" class="form-control" :class="{ 'is-invalid': fechaInvalida }"
+                    style="height:38px;"
                     v-model="form.fecha" required
+                    @blur="fechaTouched = true"
                     @keydown.enter.prevent="refViaje.focusOpen ? refViaje.focusOpen() : refViaje.focus()" />
+                  <div v-if="fechaInvalida" class="text-danger mt-1" style="font-size:0.72rem;">
+                    <i class="bi bi-exclamation-circle me-1"></i>Ingresa una fecha válida.
+                  </div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">N° Viaje</label>
                   <SearchableSelect ref="refViaje" v-model="form.viaje"
-                    :options="opcionesViaje" 
+                    :options="opcionesViaje"
                     :disabled="!!form.tipo_pago"
                     :placeholder="form.tipo_pago ? 'No aplica (' + (form.tipo_pago === 'DEPOSITO' ? 'Depósito' : 'Directo') + ')' : '— Seleccionar —'"
                     @navigate="refVale.focus()" />
                 </div>
                 <div class="col-md-3">
                   <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Vale</label>
-                  <input ref="refVale" type="text" class="form-control form-control-sm"
+                  <input ref="refVale" type="text" class="form-control" style="height:38px;"
                     v-model="form.vale" placeholder="Ej: 2850"
                     @keydown.enter.prevent="refObservacion.focus()" />
                 </div>
                 <div class="col-md-3">
                   <label class="form-label fw-medium mb-1" style="font-size:0.78rem;">Observación</label>
-                  <input ref="refObservacion" type="text" class="form-control form-control-sm"
+                  <input ref="refObservacion" type="text" class="form-control" style="height:38px;"
                     v-model="form.observacion" placeholder="Opcional"
                     @keydown.enter.prevent="refFiltroReq?.focus()" />
                 </div>
@@ -579,17 +584,18 @@
 
               <div v-else class="d-flex flex-column gap-3">
                 <div v-for="(ext, idx) in extras" :key="idx" class="card shadow-sm border-0 bg-white extra-card">
-                  <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between border-bottom-0">
-                    <span class="badge rounded-pill bg-dark text-white fw-bold px-3">EXTRA #{{ idx + 1 }}</span>
+                  <div class="ing-extra-number">{{ idx + 1 }}</div>
+                  <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between border-bottom-0 ps-4">
+                    <span class="text-muted fw-semibold" style="font-size:0.75rem; letter-spacing:0.03em;">ARTÍCULO EXTRA</span>
                     <button class="btn btn-link text-danger p-0 border-0 shadow-none" @click="eliminarExtra(idx)" title="Eliminar extra">
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
-                  <div class="card-body p-2">
-                    <div class="row g-2">
+                  <div class="card-body p-3 ps-4">
+                    <div class="row g-3">
                       <!-- Fila 1: Artículo y Proveedor -->
                       <div class="col-md-6">
-                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Artículo</label>
+                        <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Artículo</label>
                         <SearchableSelect
                           :ref="el => refArticuloExtra[idx] = el"
                           v-model="ext.articulo_id"
@@ -600,7 +606,7 @@
                         />
                       </div>
                       <div class="col-md-6">
-                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Proveedor</label>
+                        <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Proveedor</label>
                         <SearchableSelect
                           :ref="el => refProveedorExtra[idx] = el"
                           v-model="ext.proveedor_id"
@@ -613,7 +619,7 @@
 
                       <!-- Fila 2: Mina, Cantidad y Precios -->
                       <div class="col-md-4">
-                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Mina / Destino</label>
+                        <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Mina / Destino</label>
                         <SearchableSelect
                           :ref="el => refMinaExtra[idx] = el"
                           v-model="ext.mina_id"
@@ -623,31 +629,31 @@
                         />
                       </div>
                       <div class="col-md-2">
-                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Cantidad</label>
+                        <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Cantidad</label>
                         <input
                           :ref="el => refCantidadExtra[idx] = el"
                           type="number"
                           v-model.number="ext.cantidad_entregada"
-                          class="form-control form-control-sm text-center fw-bold border-2 border-primary bg-light-subtle"
+                          class="form-control text-center fw-bold border-2 border-primary bg-light-subtle"
                           min="0"
                           step="0.01"
                           placeholder="0"
-                          style="font-size: 0.8rem; height: 28px;"
+                          style="font-size: 0.9rem; height: 38px;"
                           @keydown.enter.prevent="agregarExtra()"
                         />
                       </div>
                       <div class="col-md-3">
-                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Precio Prov.</label>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text bg-light text-muted border-end-0 fw-bold">S/.</span>
-                          <input type="number" v-model.number="ext.precio_proveedor" class="form-control border-start-0 text-end fw-semibold" step="0.01" style="font-size: 0.8rem; height: 28px;" />
+                        <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Precio Prov.</label>
+                        <div class="input-group">
+                          <span class="input-group-text bg-light text-muted border-end-0 fw-bold" style="height:38px;">S/.</span>
+                          <input type="number" v-model.number="ext.precio_proveedor" class="form-control border-start-0 text-end fw-semibold" step="0.01" style="font-size: 0.9rem; height: 38px; color:#2563eb;" />
                         </div>
                       </div>
                       <div class="col-md-3">
-                        <label class="form-label mb-0 fw-semibold text-secondary" style="font-size: 0.65rem;">Precio Mina</label>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text bg-light text-muted border-end-0 fw-bold">S/.</span>
-                          <input type="number" v-model.number="ext.precio_mina" class="form-control border-start-0 text-end fw-semibold" step="0.01" style="font-size: 0.8rem; height: 28px;" />
+                        <label class="form-label mb-1 fw-semibold text-secondary" style="font-size: 0.72rem;">Precio Mina</label>
+                        <div class="input-group">
+                          <span class="input-group-text bg-light text-muted border-end-0 fw-bold" style="height:38px;">S/.</span>
+                          <input type="number" v-model.number="ext.precio_mina" class="form-control border-start-0 text-end fw-semibold" step="0.01" style="font-size: 0.9rem; height: 38px; color:#16a34a;" />
                         </div>
                       </div>
                     </div>
@@ -663,12 +669,24 @@
               <i class="bi bi-check-circle me-2"></i>{{ mensajeExito }}
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button class="btn btn-primary" @click="guardar" :disabled="guardando">
-              <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
-              {{ guardando ? 'Guardando...' : (modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso') }}
-            </button>
+          <div class="modal-footer ing-modal-footer">
+            <div v-if="itemsMarcados.length > 0 || extrasValidosCount > 0" class="ing-totals-bar">
+              <span v-if="itemsMarcados.length > 0" class="ing-totals-item">
+                <i class="bi bi-circle-fill" style="font-size:0.5rem; color:#60a5fa;"></i>
+                {{ itemsMarcados.length }} ítem{{ itemsMarcados.length === 1 ? '' : 's' }} marcado{{ itemsMarcados.length === 1 ? '' : 's' }}
+              </span>
+              <span v-if="extrasValidosCount > 0" class="ing-totals-item">
+                <i class="bi bi-circle-fill" style="font-size:0.5rem; color:#4ade80;"></i>
+                {{ extrasValidosCount }} extra{{ extrasValidosCount === 1 ? '' : 's' }}
+              </span>
+            </div>
+            <div class="ing-modal-footer-actions">
+              <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button class="btn btn-primary" @click="guardar" :disabled="guardando">
+                <span v-if="guardando" class="spinner-border spinner-border-sm me-2"></span>
+                {{ guardando ? 'Guardando...' : (modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso') }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -842,6 +860,8 @@ const ingresoEditId = ref(null);
 const guardando = ref(false);
 const mensajeError = ref('');
 const mensajeExito = ref('');
+const fechaTouched = ref(false);
+const fechaInvalida = computed(() => fechaTouched.value && !form.value.fecha);
 const seleccionados = reactive({});
 const cantidades = reactive({});
 const form = ref({
@@ -1063,6 +1083,12 @@ const porPaginaPendientes = 10;
 // Items ya marcados (siempre se muestran arriba, sin importar el filtro)
 const itemsMarcados = computed(() =>
   store.pendientes.filter(item => seleccionados[item.requerimiento_detalle_id])
+);
+
+// Resumen en vivo para el footer del modal (no perder la cuenta mientras se
+// scrollea la tabla de pendientes + la sección de extras)
+const extrasValidosCount = computed(() =>
+  extras.value.filter(e => e.articulo_id && e.proveedor_id && e.mina_id && e.cantidad_entregada > 0).length
 );
 
 // Items que coinciden con búsqueda pero NO están marcados
@@ -1401,6 +1427,7 @@ const limpiarFormulario = () => {
   Object.keys(cantidades).forEach(k => delete cantidades[k]);
   mensajeError.value = '';
   mensajeExito.value = '';
+  fechaTouched.value = false;
   modoEdicion.value = false;
   ingresoEditId.value = null;
 };
@@ -1522,6 +1549,13 @@ const guardar = async () => {
   mensajeError.value = '';
   mensajeExito.value = '';
 
+  if (!form.value.fecha || isNaN(new Date(form.value.fecha).getTime())) {
+    fechaTouched.value = true;
+    mensajeError.value = 'La fecha es obligatoria y debe ser válida. Verifica el día, mes y año.';
+    refFecha.value?.focus();
+    return;
+  }
+
   const detallesNormales = Object.entries(seleccionados)
     .filter(([, val]) => val)
     .map(([id]) => ({
@@ -1606,11 +1640,64 @@ const verDetalle = async (ing) => {
 </script>
 
 <style scoped>
+/* Footer del modal de ingreso: resumen en vivo a la izquierda, acciones a
+   la derecha, para no perder la cuenta de lo marcado/extras al scrollear. */
+.ing-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ing-modal-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.ing-totals-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.ing-totals-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
 .extra-card {
+  position: relative;
   transition: all 0.2s ease;
   border: 1px solid #dee2e6 !important;
   border-left: 5px solid #0d6efd !important; /* Acento de color lateral */
   background-color: #f8fbff !important; /* Fondo sutil azulado */
+}
+
+/* Numeración por extra, mismo lenguaje visual que las líneas de Requerimientos */
+.ing-extra-number {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #0d6efd);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.4);
+  z-index: 1;
 }
 
 .extra-card:hover {
