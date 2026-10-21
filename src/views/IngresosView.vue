@@ -56,6 +56,7 @@
             <thead>
               <tr>
                 <th>Código Req.</th>
+                <th>Fecha Req.</th>
                 <th>Mina</th>
                 <th>Artículo</th>
                 <th>Proveedor</th>
@@ -66,17 +67,18 @@
             </thead>
             <tbody>
               <tr v-if="store.cargando">
-                <td colspan="7" class="text-center py-5 text-muted">
+                <td colspan="8" class="text-center py-5 text-muted">
                   <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
                 </td>
               </tr>
               <tr v-else-if="store.pendientes.length === 0">
-                <td colspan="7" class="text-center py-5 text-success">
+                <td colspan="8" class="text-center py-5 text-success">
                   <i class="bi bi-check-circle fs-4 d-block mb-2"></i>¡Todo entregado! No hay faltantes.
                 </td>
               </tr>
               <tr v-for="item in store.pendientes" :key="item.requerimiento_detalle_id">
                 <td><span class="fw-medium text-primary">{{ item.codigo_req }}</span></td>
+                <td><span class="badge bg-white text-dark border">{{ formatearFecha(item.fecha) || '—' }}</span></td>
                 <td><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
                 <td>{{ item.articulo }}</td>
                 <td><span class="text-muted">{{ item.proveedor }}</span></td>
@@ -422,7 +424,7 @@
                 <div class="col-md-4">
                   <select ref="refFiltroReq" v-model="filtroCodigoReq" class="form-select form-select-sm">
                     <option value="">— Todos los Req —</option>
-                    <option v-for="req in uniqueRequerimientos" :key="req.codigo" :value="req.codigo">{{ req.codigo }} — {{ req.mina }}</option>
+                    <option v-for="req in uniqueRequerimientos" :key="req.codigo" :value="req.codigo">{{ req.codigo }} — {{ req.mina }}{{ req.fecha ? ` (${formatearFecha(req.fecha)})` : '' }}</option>
                   </select>
                 </div>
                 <div class="col-md-4">
@@ -470,7 +472,7 @@
                           v-model="seleccionados[item.requerimiento_detalle_id]"
                           @change="onCheck(item)" />
                       </td>
-                      <td><span class="text-primary fw-bold">{{ item.codigo_req }}</span></td>
+                      <td><span class="text-primary fw-bold">{{ item.codigo_req }}</span><span v-if="item.fecha" class="text-muted d-block" style="font-size:0.72rem;">{{ formatearFecha(item.fecha) }}</span></td>
                       <td><span class="badge bg-white text-dark border">{{ item.mina }}</span></td>
                       <td class="fw-medium">{{ item.articulo }}</td>
                       <td class="text-muted">{{ item.proveedor }}</td>
@@ -502,7 +504,7 @@
                           v-model="seleccionados[item.requerimiento_detalle_id]"
                           @change="onCheck(item)" />
                       </td>
-                      <td><span class="text-primary">{{ item.codigo_req }}</span></td>
+                      <td><span class="text-primary">{{ item.codigo_req }}</span><span v-if="item.fecha" class="text-muted d-block" style="font-size:0.72rem;">{{ formatearFecha(item.fecha) }}</span></td>
                       <td><span class="badge bg-light text-dark border">{{ item.mina }}</span></td>
                       <td>{{ item.articulo }}</td>
                       <td class="text-muted">{{ item.proveedor }}</td>
@@ -825,6 +827,12 @@ const catalogStore = useCatalogosStore();
 const fmtCant = (v) => Number(v || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
 // Montos en soles: mismo criterio, sin ceros decimales de relleno.
 const fmtMoney = (v) => Number(v || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
+const formatearFecha = (f) => {
+  if (!f) return '';
+  const parts = f.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return f;
+};
 const modalRef = ref(null);
 const modalDetalleRef = ref(null);
 let bsModal = null;
@@ -1069,10 +1077,10 @@ const uniqueRequerimientos = computed(() => {
   const map = new Map();
   store.pendientes.forEach(p => {
     if (!map.has(p.codigo_req)) {
-      map.set(p.codigo_req, p.mina);
+      map.set(p.codigo_req, { mina: p.mina, fecha: p.fecha });
     }
   });
-  return Array.from(map, ([codigo, mina]) => ({ codigo, mina })).sort((a, b) => a.codigo.localeCompare(b.codigo));
+  return Array.from(map, ([codigo, data]) => ({ codigo, mina: data.mina, fecha: data.fecha })).sort((a, b) => b.codigo.localeCompare(a.codigo, undefined, { numeric: true }));
 });
 
 // ---- Paginación Items Pendientes (en modal) ----
